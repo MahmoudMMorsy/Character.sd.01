@@ -189,14 +189,14 @@ const callGeminiImage = async (parts: Part[], aspectRatio?: string): Promise<str
 
             const isRateLimit = msg.includes('429') || msg.includes('RESOURCE_EXHAUSTED') || msg.includes('Quota exceeded');
             const isRpcXhrError = msg.includes('Rpc failed') || msg.includes('xhr error') || msg.includes('ProxyUnaryCall') || msg.includes('error code: 6');
-            const isTransientError = 
+            const isTransientError =
                 isRateLimit ||
                 isRpcXhrError ||
-                msg.includes('500') || 
-                msg.includes('502') || 
-                msg.includes('503') || 
-                msg.includes('504') || 
-                msg.includes('Failed to fetch') || 
+                msg.includes('500') ||
+                msg.includes('502') ||
+                msg.includes('503') ||
+                msg.includes('504') ||
+                msg.includes('Failed to fetch') ||
                 msg.includes('NetworkError') ||
                 msg.includes('"UNKNOWN"') ||
                 msg.includes('UNKNOWN');
@@ -212,7 +212,7 @@ const callGeminiImage = async (parts: Part[], aspectRatio?: string): Promise<str
             if (isTransientError && !isZeroLimit && attempt < maxRetries) {
                 attempt++;
                 let delayTime = 2500;
-                
+
                 // Parse server suggested retry delay if available
                 const retryMatch = msg.match(/retry in ([0-9.]+)s/i) || msg.match(/"retryDelay":\s*"([0-9.]+)s"/i);
                 if (retryMatch && retryMatch[1]) {
