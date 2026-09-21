@@ -1,7 +1,6 @@
-
 import React, { useState, useEffect } from 'react';
 import Header from './components/Header';
-import Tabs from './components/Tabs';
+import Tabs, { TabItem } from './components/Tabs';
 import VirtualTryOn from './components/VirtualTryOn';
 import ClothesOnly from './components/ClothesOnly';
 import FaceSwap from './components/FaceSwap';
@@ -111,6 +110,11 @@ const LOCAL_STORAGE_HISTORY_KEY = 'ai_remix_history';
 
 const App: React.FC = () => {
   const [activeTab, setActiveTab] = useState<FeatureTab>(TABS[0].id);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [activeCategory, setActiveCategory] = useState('all');
+  const [activeBottomNav, setActiveBottomNav] = useState<'home' | 'tools' | 'history'>('home');
+  const [isToolsGridOpen, setIsToolsGridOpen] = useState(false);
+
   const [history, setHistory] = useState<HistoryItem[]>(() => {
     try {
       const saved = localStorage.getItem(LOCAL_STORAGE_HISTORY_KEY);
@@ -218,47 +222,55 @@ const App: React.FC = () => {
   const effectiveLocalMode = isOffline || forceLocalMode;
 
   return (
-    <div className="bg-[#0f172a] text-slate-200 min-h-screen font-sans flex flex-col selection:bg-purple-500 selection:text-white pb-[max(5rem,env(safe-area-inset-bottom))] sm:pb-[env(safe-area-inset-bottom)]">
+    <div className="bg-[#090d16] text-slate-100 min-h-screen font-sans flex flex-col selection:bg-violet-500 selection:text-white pb-24">
       
-      {/* Offline Banner */}
+      {/* Offline / Local Mode Banner */}
       {effectiveLocalMode && showBanner && (
-        <div className="bg-emerald-900/90 backdrop-blur-md text-emerald-100 text-center text-xs py-2 px-4 font-semibold shadow-lg sticky top-0 z-50 flex justify-between items-center border-b border-emerald-700">
+        <div className="bg-emerald-950/90 backdrop-blur-md text-emerald-200 text-center text-xs py-2 px-4 font-semibold shadow-lg sticky top-0 z-50 flex justify-between items-center border-b border-emerald-500/20">
           <div className="flex items-center gap-2">
-             <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shadow-[0_0_8px_rgba(52,211,153,0.8)]"></span>
-             <span className="truncate">{isOffline ? "OFFLINE: Running on TinyEngine™ Local AI" : "LOCAL MODE: Simulating Offline Experience"}</span>
+             <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse shadow-[0_0_10px_rgba(52,211,153,0.8)]"></span>
+             <span className="truncate">{isOffline ? "وضع أوفلاين: محرك TinyEngine™ الذكي يعمل أوفلاين" : "الوضع المحلي: تجربة افتراضية سريعة"}</span>
           </div>
-          <button onClick={() => setShowBanner(false)} className="p-1 hover:bg-emerald-800 rounded text-white/80">✕</button>
+          <button onClick={() => setShowBanner(false)} className="p-1 hover:bg-emerald-900 rounded text-white/80">✕</button>
         </div>
       )}
       
+      {/* Header Bar */}
       <Header isLocalMode={forceLocalMode} onToggleMode={toggleLocalMode} />
       
-      {/* Sticky Tabs */}
-      <div className="sticky top-0 z-40 bg-[#0f172a]/95 backdrop-blur border-b border-gray-800 shadow-lg">
+      {/* Navigation & Search Selector Bar */}
+      <div className="sticky top-[61px] z-40 bg-[#090d16]/90 backdrop-blur-xl border-b border-white/5 shadow-2xl">
          <Tabs
-            tabs={TABS.map(({ id, label, icon }) => ({ id, label, icon }))}
+            tabs={TABS}
             activeTab={activeTab}
             setActiveTab={(id) => {
                 setActiveTab(id);
                 window.scrollTo({ top: 0, behavior: 'smooth' });
             }}
+            searchQuery={searchQuery}
+            setSearchQuery={setSearchQuery}
+            activeCategory={activeCategory}
+            setActiveCategory={setActiveCategory}
           />
       </div>
 
-      <div className="flex-grow w-full max-w-7xl mx-auto flex flex-col lg:flex-row gap-6 p-4">
+      {/* Main Workspace Layout */}
+      <div className="flex-grow w-full max-w-7xl mx-auto flex flex-col lg:flex-row gap-6 p-3 sm:p-4">
+
+        {/* Main Canvas Component Container */}
         <main className="flex-1 w-full max-w-3xl mx-auto lg:mx-0">
             {activeComponent && activeTabInfo && (
-                <div className="animate-fade-in px-2 sm:px-0 pb-24 sm:pb-0">
-                    {React.cloneElement(activeComponent, {
+                <div className="animate-fade-in android-card p-4 sm:p-6 border border-white/10 shadow-2xl">
+                    {React.cloneElement(activeComponent as React.ReactElement<any>, {
                         addToHistory: (itemData: Omit<HistoryItem, 'id' | 'timestamp' | 'tabId' | 'tabLabel'>) => addToHistory(itemData, activeTabInfo)
                     })}
                 </div>
             )}
         </main>
 
-        {/* Desktop History Sidebar (Visible only on Large screens) */}
+        {/* Desktop History Sidebar */}
         <div className="hidden lg:block w-96 flex-shrink-0">
-             <div className="sticky top-24">
+             <div className="sticky top-28 android-card p-4 border border-white/10">
                 <HistoryPanel 
                     history={history} 
                     onClear={clearHistory} 
@@ -269,39 +281,121 @@ const App: React.FC = () => {
         </div>
       </div>
 
-      {/* Floating Action Button for History (Mobile/Tablet only) */}
-      <button 
-        onClick={() => setIsHistoryOpen(true)}
-        className="fixed bottom-[max(1.5rem,env(safe-area-inset-bottom))] right-6 w-14 h-14 bg-gradient-to-tr from-purple-600 to-pink-600 rounded-full shadow-2xl shadow-purple-900/50 flex items-center justify-center text-white z-40 lg:hidden active:scale-90 transition-transform"
-        aria-label="Open History"
-      >
-        <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-             <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-        </svg>
-        {history.length > 0 && (
-            <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] font-bold w-5 h-5 flex items-center justify-center rounded-full border-2 border-[#0f172a]">
-                {history.length}
-            </span>
-        )}
-      </button>
+      {/* Floating Bottom Android Navigation Bar */}
+      <nav className="fixed bottom-3 left-1/2 -translate-x-1/2 z-50 w-[92%] max-w-md bg-[#131b2e]/95 backdrop-blur-2xl border border-white/10 rounded-full px-4 py-2 shadow-2xl shadow-black/80 flex justify-around items-center">
+        <button
+          onClick={() => {
+            setActiveBottomNav('home');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+          }}
+          className={`flex flex-col items-center gap-1 py-1 px-3 rounded-2xl transition-all android-touch ${
+            activeBottomNav === 'home' ? 'text-violet-400 font-bold' : 'text-slate-400'
+          }`}
+        >
+          <Home className="w-5 h-5" />
+          <span className="text-[10px]">الرئيسية</span>
+        </button>
 
-      {/* History Drawer/Modal */}
+        <button
+          onClick={() => {
+            setActiveBottomNav('tools');
+            setIsToolsGridOpen(true);
+          }}
+          className={`flex flex-col items-center gap-1 py-1 px-3 rounded-2xl transition-all android-touch ${
+            activeBottomNav === 'tools' ? 'text-violet-400 font-bold' : 'text-slate-400'
+          }`}
+        >
+          <Grid className="w-5 h-5" />
+          <span className="text-[10px]">الأدوات (34+)</span>
+        </button>
+
+        <button
+          onClick={() => {
+            setActiveBottomNav('history');
+            setIsHistoryOpen(true);
+          }}
+          className={`flex flex-col items-center gap-1 py-1 px-3 rounded-2xl transition-all relative android-touch ${
+            activeBottomNav === 'history' ? 'text-violet-400 font-bold' : 'text-slate-400'
+          }`}
+        >
+          <HistoryIcon className="w-5 h-5" />
+          <span className="text-[10px]">السجل</span>
+          {history.length > 0 && (
+            <span className="absolute -top-1 right-2 bg-pink-500 text-white text-[9px] font-black w-4 h-4 rounded-full flex items-center justify-center">
+              {history.length}
+            </span>
+          )}
+        </button>
+      </nav>
+
+      {/* Android Tools Full Sheet Modal */}
+      {isToolsGridOpen && (
+        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex flex-col justify-end animate-fade-in">
+          <div className="bg-[#131b2e] border-t border-white/10 rounded-t-3xl max-h-[85vh] flex flex-col p-4 shadow-2xl">
+            <div className="flex justify-between items-center pb-3 border-b border-white/10">
+              <div className="flex items-center gap-2">
+                <Sparkles className="w-5 h-5 text-violet-400" />
+                <h3 className="text-base font-bold text-white">جميع أدوات التصميم ({TABS.length})</h3>
+              </div>
+              <button
+                onClick={() => {
+                  setIsToolsGridOpen(false);
+                  setActiveBottomNav('home');
+                }}
+                className="p-1.5 rounded-full bg-white/10 text-slate-300 hover:text-white"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 py-4 overflow-y-auto no-scrollbar dir-rtl">
+              {TABS.map((tab) => {
+                const Icon = tab.icon;
+                const isSelected = activeTab === tab.id;
+                return (
+                  <button
+                    key={tab.id}
+                    onClick={() => {
+                      setActiveTab(tab.id);
+                      setIsToolsGridOpen(false);
+                      setActiveBottomNav('home');
+                      window.scrollTo({ top: 0, behavior: 'smooth' });
+                    }}
+                    className={`flex items-center gap-3 p-3 rounded-2xl border text-right transition-all android-touch ${
+                      isSelected
+                        ? 'bg-violet-600/30 border-violet-500 text-white shadow-lg shadow-violet-900/30'
+                        : 'bg-[#182238] border-white/5 text-slate-300 hover:bg-[#202d4a]'
+                    }`}
+                  >
+                    <div className="p-2 rounded-xl bg-violet-500/20 text-violet-300">
+                      <Icon className="w-4 h-4" />
+                    </div>
+                    <span className="text-xs font-semibold truncate">{tab.label}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* History Modal Drawer */}
       {isHistoryOpen && (
-          <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-sm" onClick={() => setIsHistoryOpen(false)}>
+          <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/70 backdrop-blur-md" onClick={() => { setIsHistoryOpen(false); setActiveBottomNav('home'); }}>
               <div 
-                className="bg-[#1e293b] w-full sm:w-[500px] h-[85vh] sm:h-[80vh] rounded-t-2xl sm:rounded-2xl flex flex-col shadow-2xl animate-slide-up overflow-hidden"
+                className="bg-[#131b2e] border border-white/10 w-full sm:w-[500px] h-[85vh] sm:h-[80vh] rounded-t-3xl sm:rounded-3xl flex flex-col shadow-2xl overflow-hidden"
                 onClick={e => e.stopPropagation()}
               >
-                  <div className="p-4 border-b border-gray-700 flex justify-between items-center bg-[#0f172a]">
-                      <h2 className="text-lg font-bold text-white flex items-center gap-2">
-                        <span className="text-purple-400">Recent Creations</span>
-                        <span className="bg-gray-800 text-xs py-0.5 px-2 rounded-full text-gray-400">{history.length}</span>
+                  <div className="p-4 border-b border-white/10 flex justify-between items-center bg-[#090d16]">
+                      <h2 className="text-base font-bold text-white flex items-center gap-2 dir-rtl">
+                        <span className="text-violet-400">سجل ابتكارات التصميم</span>
+                        <span className="bg-white/10 text-xs py-0.5 px-2 rounded-full text-slate-300">{history.length}</span>
                       </h2>
-                      <button onClick={() => setIsHistoryOpen(false)} className="p-2 text-gray-400 hover:text-white bg-gray-800 rounded-full">
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                      <button onClick={() => { setIsHistoryOpen(false); setActiveBottomNav('home'); }} className="p-2 text-slate-400 hover:text-white bg-white/5 rounded-full">
+                        <X className="h-5 w-5" />
                       </button>
                   </div>
-                  <div className="flex-1 overflow-y-auto p-0">
+                  <div className="flex-1 overflow-y-auto p-2">
                      <HistoryPanel 
                         history={history} 
                         onClear={clearHistory} 
