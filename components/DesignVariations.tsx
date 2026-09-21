@@ -53,10 +53,16 @@ const DesignVariations: React.FC<DesignVariationsProps> = ({ addToHistory }) => 
           setResults({ ...newResults }); // Force re-render with partial results
         } catch (imgError: any) {
           console.error(`Failed to generate variation ${i + 1}`, imgError);
-          // Don't throw, just put a placeholder or leave it empty so rest can continue
           newResults[i] = "ERROR";
           setResults({ ...newResults });
-          setGenerationErrors(prev => ({ ...prev, [i]: imgError?.message || "Generation failed" }));
+          const errMsg = imgError?.message || "Generation failed";
+          setGenerationErrors(prev => ({ ...prev, [i]: errMsg }));
+
+          // If permission is denied or quota is 0, stop and display friendly notification
+          if (errMsg.includes("403") || errMsg.includes("PERMISSION_DENIED") || errMsg.includes("Permission Denied") || errMsg.includes("limit is 0") || errMsg.includes("Quota")) {
+            setError(errMsg);
+            break;
+          }
         }
         
         // Add 6.5 second delay between requests to prevent API maximum requests-per-minute quota issues
@@ -217,8 +223,17 @@ const DesignVariations: React.FC<DesignVariationsProps> = ({ addToHistory }) => 
                   )}
                 </div>
                 <div className="w-full md:w-2/3">
-                  <div className="inline-flex items-center justify-center px-2.5 py-1 rounded-full bg-indigo-100 text-indigo-800 text-xs font-bold mb-3">
-                    Variation {idx + 1}
+                  <div className="flex items-center justify-between mb-3">
+                    <span className="inline-flex items-center justify-center px-2.5 py-1 rounded-full bg-indigo-100 text-indigo-800 text-xs font-bold">
+                      Variation {idx + 1}
+                    </span>
+                    <button
+                      onClick={() => navigator.clipboard.writeText(prompt)}
+                      className="text-xs text-indigo-600 hover:text-indigo-800 font-medium px-2 py-1 rounded bg-indigo-50 hover:bg-indigo-100 transition-colors"
+                      title="نسخ الفكرة / Copy prompt"
+                    >
+                      نسخ الفكرة / Copy
+                    </button>
                   </div>
                   <p className="text-gray-700 text-sm leading-relaxed italic border-l-4 border-indigo-200 pl-4 py-1">
                     "{prompt}"

@@ -113,6 +113,16 @@ export const fileToGenerativePart = async (file: File): Promise<Part> => {
 
 const imageToDataUrl = (base64: string, mimeType: string) => `data:${mimeType};base64,${base64}`;
 
+const normalizeAspectRatio = (ratio?: string): "1:1" | "3:4" | "4:3" | "9:16" | "16:9" | undefined => {
+    if (!ratio) return undefined;
+    if (ratio === "1:1" || ratio === "3:4" || ratio === "4:3" || ratio === "9:16" || ratio === "16:9") {
+        return ratio;
+    }
+    if (ratio === "2:3") return "3:4";
+    if (ratio === "3:2") return "4:3";
+    return "1:1";
+};
+
 const callGeminiImage = async (parts: Part[], aspectRatio?: string): Promise<string> => {
     // Basic fallback for offline/local mode simulation if API key is missing
     if (!getApiKey() || useLocalEngine) {
@@ -131,12 +141,13 @@ const callGeminiImage = async (parts: Part[], aspectRatio?: string): Promise<str
     while (attempt <= maxRetries) {
         try {
             const ai = new GoogleGenAI({ apiKey: getApiKey() });
+            const validRatio = normalizeAspectRatio(aspectRatio);
             const response = await ai.models.generateContent({
-                model: 'gemini-2.5-flash-image',
+                model: 'gemini-3.1-flash-lite-image',
                 contents: { parts },
-                config: aspectRatio ? {
+                config: validRatio ? {
                     imageConfig: {
-                        aspectRatio: aspectRatio
+                        aspectRatio: validRatio
                     }
                 } : undefined
             });
@@ -152,7 +163,7 @@ const callGeminiImage = async (parts: Part[], aspectRatio?: string): Promise<str
                  
                  for (const part of candidate.content?.parts || []) {
                      if (part.inlineData) {
-                         return imageToDataUrl(part.inlineData.data, part.inlineData.mimeType);
+                         return imageToDataUrl(part.inlineData.data, part.inlineData.mimeType || 'image/png');
                      }
                  }
             }
@@ -162,8 +173,15 @@ const callGeminiImage = async (parts: Part[], aspectRatio?: string): Promise<str
             const msg = error.message || '';
             const isRateLimit = msg.includes('429') || msg.includes('RESOURCE_EXHAUSTED') || msg.includes('Quota exceeded') || msg.includes('503');
             const isSafety = msg.includes('safety') || msg.includes('blocked');
+            const isPermission = msg.includes('403') || msg.includes('PERMISSION_DENIED') || msg.includes('does not have permission');
+            const isZeroLimit = msg.includes('limit: 0') || (msg.includes('Quota exceeded') && msg.includes('free_tier'));
 
-            if (isRateLimit && attempt < maxRetries) {
+            if (isPermission || isZeroLimit) {
+                console.error("Gemini Image API Permission/Quota error:", error);
+                throw new Error("توليد الصور بالذكاء الاصطناعي يتطلب حساباً مفعلاً به كوتا توليد الصور (Free tier limit is 0). يمكنك تفعيل الوضع المحلي (LOCAL) من الأعلى للتشغيل الفوري بدون انتظار.");
+            }
+
+            if (isRateLimit && !isZeroLimit && attempt < maxRetries) {
                 attempt++;
                 const delayTime = baseDelay * Math.pow(2, attempt); // 10s, 20s, 40s
                 console.warn(`Gemini API busy. Retrying in ${delayTime}ms...`);
@@ -252,30 +270,39 @@ const callGeminiImageHighQuality = async (parts: Part[]): Promise<string> => {
         throw new Error("Local mode: Cannot generate new image without API key.");
     }
 
-    const ai = new GoogleGenAI({ apiKey: getApiKey() });
-    const response = await ai.models.generateContent({
-        model: 'gemini-2.5-flash-image',
-        contents: { parts },
-        config: {
-            imageConfig: {
-                aspectRatio: "1:1"
+    try {
+        const ai = new GoogleGenAI({ apiKey: getApiKey() });
+        const response = await ai.models.generateContent({
+            model: 'gemini-3.1-flash-image',
+            contents: { parts },
+            config: {
+                imageConfig: {
+                    aspectRatio: "1:1"
+                }
             }
-        }
-    });
+        });
 
-    const candidates = response.candidates;
-    if (candidates && candidates.length > 0) {
-        const candidate = candidates[0];
-        if (candidate.finishReason === 'SAFETY') {
-            throw new Error('Image generation blocked by safety filters. The model detected content it cannot process. Please try a different photo.');
-        }
-        for (const part of candidate.content?.parts || []) {
-            if (part.inlineData) {
-                return imageToDataUrl(part.inlineData.data, part.inlineData.mimeType);
+        const candidates = response.candidates;
+        if (candidates && candidates.length > 0) {
+            const candidate = candidates[0];
+            if (candidate.finishReason === 'SAFETY') {
+                throw new Error('Image generation blocked by safety filters. The model detected content it cannot process. Please try a different photo.');
+            }
+            for (const part of candidate.content?.parts || []) {
+                if (part.inlineData) {
+                    return imageToDataUrl(part.inlineData.data, part.inlineData.mimeType || 'image/png');
+                }
             }
         }
+        throw new Error("Failed to generate high-quality image.");
+    } catch (e: any) {
+        const msg = e.message || '';
+        if (msg.includes('403') || msg.includes('PERMISSION_DENIED') || msg.includes('does not have permission')) {
+            throw new Error("Gemini API Permission Denied (403): High-quality image generation requires an active Gemini API key with billing/permissions enabled.");
+        }
+        // Try fallback to lite model
+        return callGeminiImage(parts, "1:1");
     }
-    throw new Error("Failed to generate high-quality image.");
 };
 
 export const convertToRealisticAnatomy = async (image: ImageFile): Promise<string> => {
@@ -598,7 +625,7 @@ export const detectSpriteFrames = async (file: File): Promise<{ cols?: number; r
     const imagePart = await fileToGenerativePart(file);
 
     const response = await ai.models.generateContent({
-        model: 'gemini-2.5-flash-image',
+        model: 'gemini-3.8-flash',
         contents: {
             parts: [
                 imagePart,
@@ -1969,7 +1996,7 @@ ${additionalPrompt}
 
         const ai = new GoogleGenAI({ apiKey });
         const response = await ai.models.generateContent({
-            model: 'gemini-2.5-flash-image',
+            model: 'gemini-3.1-flash-lite-image',
             contents: {
                 parts: [
                     { inlineData: { data: base64Data, mimeType: imageFile.file.type } },
@@ -2112,7 +2139,7 @@ export const generateVariationPrompts = async (filePart: any): Promise<string[]>
 
     try {
         const response = await ai.models.generateContent({
-            model: 'gemini-3.1-pro-preview',
+            model: 'gemini-3.8-flash',
             contents: { parts },
             config: {
                 responseMimeType: "application/json",
