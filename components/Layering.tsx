@@ -7,6 +7,7 @@ import type { ImageFile, HistoryItem } from '../types';
 import { CopyIcon } from './icons/CopyIcon';
 import { PasteIcon } from './icons/PasteIcon';
 import { TrashIcon } from './icons/TrashIcon';
+import { copyImageToClipboard } from '../services/clipboardUtils';
 
 interface LayeringProps {
   addToHistory: (item: Omit<HistoryItem, 'id' | 'timestamp' | 'tabId' | 'tabLabel'>) => void;
@@ -45,40 +46,9 @@ const Layering: React.FC<LayeringProps> = ({ addToHistory }) => {
     const imageToCopy = accessoryImages[indexToCopy];
     if (!imageToCopy) return;
     try {
-        let blob = imageToCopy.file.slice(0, imageToCopy.file.size, imageToCopy.file.type);
-        
-        // Fix: Convert to PNG if not already
-        if (blob.type !== 'image/png') {
-            try {
-                const imageBitmap = await createImageBitmap(imageToCopy.file);
-                const canvas = document.createElement('canvas');
-                canvas.width = imageBitmap.width;
-                canvas.height = imageBitmap.height;
-                const ctx = canvas.getContext('2d');
-                if (ctx) {
-                    ctx.drawImage(imageBitmap, 0, 0);
-                    const pngBlob = await new Promise<Blob | null>(resolve => canvas.toBlob(resolve, 'image/png'));
-                    if (pngBlob) blob = pngBlob;
-                }
-            } catch (fallbackErr) {
-                // Ignore decoding errors and try to copy the original blob anyway
-            }
-        }
-
-        try {
-            await navigator.clipboard.write([
-                new ClipboardItem({ [blob.type]: blob })
-            ]);
-        } catch (writeErr) {
-            // Some browsers require image/png specifically, if it failed and isn't png, we report it
-            if (blob.type !== 'image/png') {
-                throw new Error('Browser clipboard might only support PNG images. Could not convert image to PNG.');
-            } else {
-                throw writeErr;
-            }
-        }
+        await copyImageToClipboard(imageToCopy.previewUrl || imageToCopy.file);
     } catch (err) {
-        console.error('Failed to copy accessory image:', err);
+        console.warn('Failed to copy accessory image:', err);
     }
   };
 

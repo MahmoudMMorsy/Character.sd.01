@@ -3,6 +3,7 @@ import React, { useRef, useState } from 'react';
 import type { ImageFile } from '../types';
 import { CopyIcon } from './icons/CopyIcon';
 import { PasteIcon } from './icons/PasteIcon';
+import { copyImageToClipboard } from '../services/clipboardUtils';
 
 interface ImageUploaderProps {
   onFileSelect: (imageFile: ImageFile | null) => void;
@@ -87,42 +88,13 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({ onFileSelect, image, labe
     e.stopPropagation();
     if (!image) return;
     try {
-        let blob = image.file.slice(0, image.file.size, image.file.type); // Clone file as blob
-        
-        // Convert to PNG if not already, as ClipboardItem requires image/png in many browsers
-        if (blob.type !== 'image/png') {
-            try {
-                const imageBitmap = await createImageBitmap(blob);
-                const canvas = document.createElement('canvas');
-                canvas.width = imageBitmap.width;
-                canvas.height = imageBitmap.height;
-                const ctx = canvas.getContext('2d');
-                if (ctx) {
-                    ctx.drawImage(imageBitmap, 0, 0);
-                    const pngBlob = await new Promise<Blob | null>(resolve => canvas.toBlob(resolve, 'image/png'));
-                    if (pngBlob) blob = pngBlob;
-                }
-            } catch (fallbackErr) {
-                // Ignore decoding errors and try to copy the original blob anyway
-            }
+        const success = await copyImageToClipboard(image.previewUrl || image.file);
+        if (success) {
+            setCopySuccess(true);
+            setTimeout(() => setCopySuccess(false), 2000);
         }
-
-        try {
-            await navigator.clipboard.write([
-                new ClipboardItem({ [blob.type]: blob })
-            ]);
-        } catch (writeErr) {
-            // Some browsers require image/png specifically, if it failed and isn't png, we report it
-            if (blob.type !== 'image/png') {
-                throw new Error('Browser clipboard might only support PNG images. Could not convert image to PNG.');
-            } else {
-                throw writeErr;
-            }
-        }
-        setCopySuccess(true);
-        setTimeout(() => setCopySuccess(false), 2000);
     } catch (err) {
-        console.error('Failed to copy image:', err);
+        console.warn('Failed to copy image to clipboard:', err);
     }
   };
 

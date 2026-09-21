@@ -2,6 +2,7 @@ import { initializeApp } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
 import { 
   getFirestore, 
+  initializeFirestore,
   doc, 
   getDocFromServer, 
   setDoc, 
@@ -16,6 +17,16 @@ import firebaseConfig from '../firebase-applet-config.json';
 import type { HistoryItem } from '../types';
 
 const app = initializeApp(firebaseConfig);
+
+// Initialize Firestore with auto-detect long polling for resilient connections in iframe/proxy environments
+try {
+  initializeFirestore(app, {
+    experimentalAutoDetectLongPolling: true,
+  }, firebaseConfig.firestoreDatabaseId);
+} catch {
+  // If already initialized by another module, proceed
+}
+
 export const db = getFirestore(app, firebaseConfig.firestoreDatabaseId); /* CRITICAL: The app will break without this line */
 export const auth = getAuth(app);
 
@@ -68,16 +79,12 @@ export function handleFirestoreError(error: unknown, operationType: OperationTyp
 
 export async function testConnection() {
   try {
-    if (typeof navigator !== 'undefined' && !navigator.onLine) {
-      console.info("Client is currently offline; Firestore will operate locally.");
-      return;
-    }
     await getDocFromServer(doc(db, 'test', 'connection'));
   } catch (error: any) {
-    if (error?.code === 'unavailable' || (error instanceof Error && (error.message.includes('the client is offline') || error.message.includes('unavailable')))) {
-      console.info("Firestore client is offline or unavailable. Operating with local offline fallback.");
-    } else {
-      console.debug("Firestore test connection check completed (expected if rules deny unauthenticated read):", error);
+    if (error instanceof Error && error.message.includes('the client is offline')) {
+      console.error("Please check your Firebase configuration.");
+    } else if (error?.code === 'unavailable' || (error instanceof Error && error.message.includes('unavailable'))) {
+      console.info("Firestore client is offline or backend is temporarily unreachable. Operating with local offline fallback.");
     }
   }
 }

@@ -19,6 +19,142 @@ const SpriteSheetMaker: React.FC<SpriteSheetMakerProps> = ({ addToHistory }) => 
   
   // Data Structure - THE ULTIMATE MERGED ROSTER
   const styleGroups = [
+    // --- FEATURED RETRO & MMORPG CLASSICS ---
+    {
+        label: "MapleStory: Monsters & Bosses (وحوش وزعماء مابل)",
+        id: "game_maplestory_monsters",
+        options: [
+            {id: 'maple-mushmom', label: 'Mushmom (머쉬맘 - Giant Mushroom Boss)', tags: ['Big Hop', 'Ground Tremor', 'Poison Spores', 'Jump Stomp', 'Angry Flash', 'Defeat Drop']},
+            {id: 'maple-zakum', label: 'Zakum (자쿰 - 8-Armed Ancient Boss)', tags: ['8-Arm Float', 'Arm Slam', 'Fire Pillar', 'Ice Pillar', 'Laser Beam', 'Arm Fall Defeat']},
+            {id: 'maple-pinkbean', label: 'Pink Bean (핑크빈 - Cute God of Destruction)', tags: ['Yo-Yo Spin', 'Mini Pogo Hop', 'Genesis Beam', 'Musical Notes', 'Popcorn Snack', 'Nap Time']},
+            {id: 'maple-balrog', label: 'Crimson Balrog (크림슨 발록 - Airship Terror)', tags: ['Demon Hover', 'Claw Slash', 'Meteor Rain', 'Dark Roar', 'Flight Dive', 'Explode']},
+            {id: 'maple-horntail', label: 'Horntail (혼테일 - 3-Headed Dragon Boss)', tags: ['3-Head Roar', 'Lightning Breath', 'Ice Breath', 'Tail Sweep', 'Wing Flap', 'Earthquake']},
+            {id: 'maple-yeti-pepe', label: 'Yeti & Pepe (예티와 페페)', tags: ['Yeti Walk', 'Pepe Throw', 'Ice Punch', 'Heavy Stomp', 'Separate Duo', 'Cheer']},
+            {id: 'maple-kingslime', label: 'King Slime (킹슬라임 - Giant Crown Boss)', tags: ['Heavy Squish', 'Mega Bounce', 'Mini-Slime Spawn', 'Crown Shine', 'Giant Splat']},
+            {id: 'maple-mushroom', label: 'Orange Mushroom (주황버섯)', tags: ['Hop', 'Squash', 'High Bounce', 'Smiley Jump', 'Cap Spin', 'Defeat Drop']},
+            {id: 'maple-slime', label: 'Green Slime (슬라임)', tags: ['Jiggle', 'Squish', 'Hop', 'Sparkle', 'Pop (Die)']},
+            {id: 'maple-ribbonpig', label: 'Ribbon Pig (리본돼지)', tags: ['Trot', 'Red Ribbon Flutter', 'Headbutt Rush', 'Oink Panic', 'Roll Over']},
+            {id: 'maple-wildboar', label: 'Wild Boar (와일드보어)', tags: ['Snort', 'Tusk Charge', 'Sprint', 'Dust Cloud', 'Knockback']},
+            {id: 'maple-evil-eye', label: 'Evil Eye (이블아이)', tags: ['Float', 'Blink Eye', 'Tail Whip', 'Hypnotic Stare', 'Shrink']},
+            {id: 'maple-lupin', label: 'Lupin (루팡 - Banana Monkey)', tags: ['Tree Perch', 'Banana Toss', 'Peel Slip', 'Scratch Head', 'Laugh']},
+            {id: 'maple-pepe', label: 'Pepe (페페 - Mini Penguin)', tags: ['Waddle', 'Beak Peck', 'Belly Slide', 'Shiver', 'Squawk']}
+        ]
+    },
+    {
+        label: "MapleStory: Mounts & Vehicles (مطايا ومركبات مابل)",
+        id: "game_maplestory_mounts",
+        options: [
+            {id: 'maple-mount-reddraco', label: 'Red Draco (التنين الأحمر المجنح)', tags: ['Hover Idle', 'Fly Dash', 'Fire Breath', 'Wing Flap', 'Landing', 'Roar Jump']},
+            {id: 'maple-mount-shinjou', label: 'Shinjou (شينجو - البيغاسوس الملكي)', tags: ['Holy Aura Float', 'Glide Forward', 'Wing Beat', 'Feather Sparkle', 'Divine Neigh', 'Rest']},
+            {id: 'maple-mount-silvermane', label: 'Silver Mane (الخنزير البري المدرع)', tags: ['Snort Trot', 'High Speed Charge', 'Tusk Ram', 'Dust Skidding', 'Leap', 'Halt']},
+            {id: 'maple-mount-frog', label: 'Frog Mount (الضفدع النطاط اللطيف)', tags: ['Crouch Idle', 'Big Ribbit Hop', 'Tongue Catch', 'Water Splash', 'High Bounce', 'Squat']},
+            {id: 'maple-mount-hotairballoon', label: 'Hot Air Balloon Bear (منطاد الدب الوردي)', tags: ['Float Drift', 'Burner Flame', 'Gentle Bob', 'Basket Sway', 'Altitude Rise', 'Land']},
+            {id: 'maple-mount-kingcro', label: 'King Cro (التمساح الملكي)', tags: ['Slither Crawl', 'Jaw Snap', 'Tail Whip', 'Mud Slide', 'Roar', 'Bask']},
+            {id: 'maple-mount-yeti', label: 'Yeti Mount (الييتي القطبي الضخم)', tags: ['Heavy Stomp', 'Chest Beat', 'Ice Leap', 'Snow Charge', 'Sit', 'Yeti Roar']},
+            {id: 'maple-mount-toytank', label: 'Toy Tank (دبابة الألعاب الملونة)', tags: ['Tread Roll', 'Turret Spin', 'Toy Shell Shot', 'Exhaust Puff', 'Recoil Jolt', 'Brake']},
+            {id: 'maple-mount-robot', label: 'Blue Mecha Robot (الروبوت المقاتل)', tags: ['Hover Thrust', 'Laser Cannon', 'Shield Guard', 'Rocket Boost', 'Hydraulic Step', 'Power Down']},
+            {id: 'maple-mount-ostrich', label: 'Ostrich (النعامة السريعة)', tags: ['Sprint Run', 'Head Bob', 'Dust Trail', 'Peck Peck', 'High Jump', 'Skid Stop']},
+            {id: 'maple-mount-ram', label: 'Ram (الكبش الصغير ذو القرون)', tags: ['Trot', 'Headbutt Charge', 'Horn Shake', 'Bell Jingling', 'Bounce Hop', 'Snort']},
+            {id: 'maple-mount-turtle', label: 'Turtle Mount (السلحفاة الأنيقة بربطة عنق)', tags: ['Steady Paddle', 'Shell Hide', 'Shell Spin', 'Blink Waddle', 'Puff Smoke', 'Rest']},
+            {id: 'maple-mount-racecar', label: 'Maple Racing Car (سيارة الفورمولا)', tags: ['Engine Rev', 'High Speed Drift', 'Nitro Boost', 'Tire Smoke', 'Backfire', 'Victory Lap']},
+            {id: 'maple-mount-rockinghorse', label: 'Rocking Horse (الحصان الهزاز)', tags: ['Rock Forward', 'Rock Backward', 'Wheel Roll', 'Neigh Bell', 'Spring Jump', 'Creak']},
+            {id: 'maple-mount-watchhog', label: 'Watch Hog (خنزير الحراسة)', tags: ['Sniff Ground', 'Trot', 'Squeal Rush', 'Alert Stance', 'Roll Dirt', 'Oink']},
+            {id: 'maple-mount-mimiana', label: 'Mimiana (طائر الميميانا المحارب)', tags: ['Flutter Walk', 'Helmet Tilt', 'Wing Glide', 'Peck Attack', 'Squawk', 'Perch']},
+            {id: 'maple-mount-mimio', label: 'Mimio (طائر الميميو الأزرق)', tags: ['Little Waddle', 'Wing Flap', 'Sky Hop', 'Cute Chirp', 'Blink', 'Cuddle']},
+            {id: 'maple-mount-magicsquare', label: 'Magic Square (الكرة السحرية العائمة)', tags: ['Mystic Pulse', 'Energy Orbit', 'Speed Float', 'Prism Glow', 'Teleport Flash', 'Hum']}
+        ]
+    },
+    {
+        label: "MapleStory: Pets & Companions (حيوانات مابل الأليفة)",
+        id: "game_maplestory_pets",
+        options: [
+            {id: 'maple-pet-blackdragon', label: 'Black Dragon (التنين الأسود الصغير)', tags: ['Wing Flutter', 'Mini Flame Puff', 'Tail Wag', 'Roar Chirp', 'Sleep Coiled', 'Cheer']},
+            {id: 'maple-pet-jrbalrog', label: 'Jr. Balrog (البالروغ الصغير اللطيف)', tags: ['Demon Hover', 'Mini Claw Swipe', 'Tiny Fireball', 'Angry Stomp', 'Sulky Nap', 'Evil Laugh']},
+            {id: 'maple-pet-jrreaper', label: 'Jr. Reaper (حصاد الأرواح الصغير)', tags: ['Ghostly Float', 'Scythe Swing', 'Soul Sparkle', 'Spooky Hide', 'Float Sleep', 'Wail']},
+            {id: 'maple-pet-crystalrudolph', label: 'Crystal Rudolph (غزال الكريستال المتلألئ)', tags: ['Crystal Antler Glow', 'Prance Trot', 'Sparkle Dust', 'Antler Bell', 'Lie Down', 'Joy Leap']},
+            {id: 'maple-pet-dinoboy', label: 'Dino Boy (الديناصور الصغير اللطيف)', tags: ['Little Stomp', 'Tail Thump', 'Cute Roar', 'Bite Leaf', 'Tumble Roll', 'Happy Dance']},
+            {id: 'maple-pet-panda', label: 'Panda (دب الباندا مع عود الخيزران)', tags: ['Bamboo Munch', 'Bumble Waddle', 'Roll Over', 'Yawn Scratch', 'Bamboo Swing', 'Nap']},
+            {id: 'maple-pet-sunwukong', label: 'Sun Wu Kong (الملك القرد وو كونغ)', tags: ['Staff Twirl', 'Cloud Ride', 'Somersault', 'Scratch Ear', 'Battle Pose', 'Banana Snack']},
+            {id: 'maple-pet-cloudleopard', label: 'Cloud Leopard (فهد السحاب المرقط)', tags: ['Prowl Stalk', 'Feline Pounce', 'Claw Scratch', 'Purr Rub', 'Lick Paw', 'Tail Flick']},
+            {id: 'maple-pet-kino', label: 'Kino Mushroom (فطر كينو الأليف)', tags: ['Shy Wobble', 'Cap Shake', 'Happy Hop', 'Sweat Drop', 'Mini Spin', 'Snooze']},
+            {id: 'maple-pet-whitetiger', label: 'White Tiger (النمر الأبيض الصغير)', tags: ['Playful Pounce', 'Tiger Stride', 'Baby Roar', 'Paw Swipe', 'Curl Up', 'Nuzzle']},
+            {id: 'maple-pet-blackkitty', label: 'Black Kitty (القطة السوداء المرحة)', tags: ['Meow Arch', 'Tail Swish', 'Yarn Bat', 'Stretching Paws', 'Sleep Box', 'Purr']},
+            {id: 'maple-pet-bluehusky', label: 'Blue Husky (كلب الهاسكي الأزرق)', tags: ['Tail Wag', 'Happy Bark', 'Snow Dig', 'Howl at Moon', 'Fetch Stick', 'Pant']},
+            {id: 'maple-pet-elephant', label: 'Baby Elephant (الفيل الصغير)', tags: ['Trunk Water Spray', 'Heavy Baby Step', 'Ear Flap', 'Trunk Wave', 'Sit Dump', 'Trumpet']},
+            {id: 'maple-pet-gorillarobo', label: 'Gorilla Robo (الروبوت الآلي غوريلا)', tags: ['Metallic Chest Beat', 'Rocket Punch', 'Copter Spin', 'Steam Vent', 'Servo Step', 'Recharge']},
+            {id: 'maple-pet-greenrobo', label: 'Green Robo (الروبوت الآلي الأخضر)', tags: ['Radar Scan', 'Gear Whir', 'Plasma Spark', 'Step March', 'Antenna Flash', 'Standby']},
+            {id: 'maple-pet-toucan', label: 'Toucan (طائر الطوقان الاستوائي)', tags: ['Beak Clack', 'Tropical Hop', 'Wing Flutter', 'Berry Catch', 'Feather Preen', 'Squawk']},
+            {id: 'maple-pet-whitebunny', label: 'White Bunny (الأرنب الأبيض اللطيف)', tags: ['Ear Twitch', 'Carrot Nibble', 'High Hop', 'Nose Sniff', 'Thump Foot', 'Cuddle']},
+            {id: 'maple-pet-whiteduck', label: 'White Duck (البطة البيضاء ذات الوشاح)', tags: ['Waddle Walk', 'Scarf Flutter', 'Quack Quack', 'Tail Wag', 'Water Splash', 'Preen']},
+            {id: 'maple-pet-snowman', label: 'Snowman Pet (رجل الثلج الصغير)', tags: ['Wobble Slide', 'Snowball Toss', 'Hat Adjust', 'Melt Shiver', 'Freeze Solid', 'Smile']},
+            {id: 'maple-pet-snail', label: 'Snail Pet (الحلزون الصغير ذو الزهرة)', tags: ['Slow Creep', 'Flower Bloom', 'Shell Duck', 'Antenna Twitch', 'Gleam Slime', 'Rest']}
+        ]
+    },
+    {
+        label: "MapleStory: Morphs (تحولات ومسوخ مابل السحرية)",
+        id: "game_maplestory_morphs",
+        options: [
+            {id: 'maple-morph-greencornian', label: 'Green Cornian (تنين الكورنيان المحارب)', tags: ['Dragon Sword Slash', 'Shield Bash', 'Tail Whip', 'Battle Stomp', 'Draconic Roar', 'Wing Shield']},
+            {id: 'maple-morph-barnardgrey', label: 'Barnard Grey (الفضائي الرمادي بارنارد)', tags: ['Alien Antenna Glow', 'Psychic Beam', 'Hover Float', 'Ray Gun Zap', 'Probe Scan', 'Vanish Beam']},
+            {id: 'maple-morph-box', label: 'Mystery Box (صندوق الهدايا المتحرك)', tags: ['Box Wiggle', 'Lid Pop Surprise', 'Confetti Burst', 'Slide Shuffle', 'Hide Inside', 'Ribbon Snap']},
+            {id: 'maple-morph-orangemushroom', label: 'Orange Mushroom Morph (تحول الفطر البرتقالي)', tags: ['Bouncy Hop', 'Cap Slam', 'Squish Defense', 'Mushroom Roll', 'Spore Cloud', 'Happy Jump']},
+            {id: 'maple-morph-redsnail', label: 'Red Snail Morph (تحول الحلزون الأحمر)', tags: ['Red Shell Slide', 'Shell Spin Dash', 'Horn Poke', 'Tough Shell Guard', 'Retract', 'Peep Out']},
+            {id: 'maple-morph-ribbonpig', label: 'Ribbon Pig Morph (تحول الخنزير ذو الشريط)', tags: ['Headlong Charge', 'Red Ribbon Flutter', 'Oink Dash', 'Tumble Knock', 'Happy Snort', 'Rest']}
+        ]
+    },
+    {
+        label: "MapleStory: Base Bodies & Skins (أجسام وبشرات مابل)",
+        id: "game_maplestory_bodies",
+        options: [
+            {id: 'maple-body-light', label: 'Light Body (البشرة الفاتحة الطبيعية)', tags: ['Bouncing Idle', 'Chibi Walk', 'Sprint Run', 'Jump Air', 'Punch Strike', 'Crouch Prone', 'Hit Stun', 'Tombstone', 'Level Up Cheer']},
+            {id: 'maple-body-dark', label: 'Dark Body (البشرة السمراء الداكنة)', tags: ['Bouncing Idle', 'Chibi Walk', 'Sprint Run', 'Jump Air', 'Punch Strike', 'Crouch Prone', 'Hit Stun', 'Tombstone', 'Level Up Cheer']},
+            {id: 'maple-body-pale', label: 'Pale Body (البشرة الشاحبة الخزفية)', tags: ['Bouncing Idle', 'Chibi Walk', 'Sprint Run', 'Jump Air', 'Punch Strike', 'Crouch Prone', 'Hit Stun', 'Tombstone', 'Level Up Cheer']},
+            {id: 'maple-body-tan', label: 'Tan Body (البشرة البرونزية التان)', tags: ['Bouncing Idle', 'Chibi Walk', 'Sprint Run', 'Jump Air', 'Punch Strike', 'Crouch Prone', 'Hit Stun', 'Tombstone', 'Level Up Cheer']},
+            {id: 'maple-body-white', label: 'White Body (البشرة البيضاء الشبحية)', tags: ['Bouncing Idle', 'Chibi Walk', 'Sprint Run', 'Jump Air', 'Punch Strike', 'Crouch Prone', 'Hit Stun', 'Tombstone', 'Level Up Cheer']},
+            {id: 'maple-body-yellow', label: 'Yellow Body (البشرة الصفراء الكرتونية)', tags: ['Bouncing Idle', 'Chibi Walk', 'Sprint Run', 'Jump Air', 'Punch Strike', 'Crouch Prone', 'Hit Stun', 'Tombstone', 'Level Up Cheer']},
+            {id: 'maple-body-green', label: 'Green Body (البشرة الخضراء الفضائية)', tags: ['Bouncing Idle', 'Chibi Walk', 'Sprint Run', 'Jump Air', 'Punch Strike', 'Crouch Prone', 'Hit Stun', 'Tombstone', 'Level Up Cheer']},
+            {id: 'maple-body-blue', label: 'Blue Body (البشرة الزرقاء الجليدية)', tags: ['Bouncing Idle', 'Chibi Walk', 'Sprint Run', 'Jump Air', 'Punch Strike', 'Crouch Prone', 'Hit Stun', 'Tombstone', 'Level Up Cheer']},
+            {id: 'maple-body-red', label: 'Red Body (البشرة الحمراء النارية)', tags: ['Bouncing Idle', 'Chibi Walk', 'Sprint Run', 'Jump Air', 'Punch Strike', 'Crouch Prone', 'Hit Stun', 'Tombstone', 'Level Up Cheer']},
+            {id: 'maple-body-gray', label: 'Gray Body (البشرة الرمادية المعدنية)', tags: ['Bouncing Idle', 'Chibi Walk', 'Sprint Run', 'Jump Air', 'Punch Strike', 'Crouch Prone', 'Hit Stun', 'Tombstone', 'Level Up Cheer']}
+        ]
+    },
+    {
+        label: "MapleStory: Heroes & Classes (أبطال وفئات مابل)",
+        id: "game_maplestory_heroes",
+        options: [
+            {id: 'maple-warrior', label: 'Warrior / Hero', tags: ['Idle (Bouncing)', 'Walk', 'Slash', 'Power Strike', 'Jump Attack', 'Rest Chair', 'Tombstone (Die)', 'Level Up']},
+            {id: 'maple-magician', label: 'Magician / Bishop', tags: ['Idle (Float)', 'Teleport', 'Magic Claw', 'Energy Bolt', 'Heal', 'Staff Spell', 'Sit Chair', 'Win']},
+            {id: 'maple-bowman', label: 'Bowman / Archer', tags: ['Idle (Alert)', 'Arrow Blow', 'Double Shot', 'Draw Bow', 'Jump Shot', 'Eagle Fly', 'Hurt']},
+            {id: 'maple-thief', label: 'Thief / Assassin', tags: ['Idle (Shadow)', 'Flash Jump', 'Lucky Seven', 'Double Stab', 'Haste', 'Shuriken Throw', 'Vanish']},
+            {id: 'maple-pirate', label: 'Pirate / Brawler', tags: ['Idle (Punch)', 'Somersault Kick', 'Bullet Blast', 'Corkscrew', 'Dash', 'Octopus Summon']}
+        ]
+    },
+    {
+        label: "Shantae and the Pirate's Curse",
+        id: "game_shantae",
+        options: [
+            {id: 'shantae-hero', label: 'Shantae (Half-Genie)', tags: ['Idle Stance', 'Hair Whip', 'Pistol Shot', 'Pirate Hat Glide', 'Scimitar Slash', 'Cannon Jump', 'Belly Dance', 'Victory']},
+            {id: 'shantae-risky', label: 'Risky Boots (Pirate Queen)', tags: ['Pirate Laugh', 'Cutlass Slash', 'Flintlock Shot', 'Anchor Drop', 'Backflip', 'Command Orders']},
+            {id: 'shantae-bolo', label: 'Bolo', tags: ['Flail Swing', 'Grapple Hook', 'Trip/Fall', 'Cheer Jump', 'Clumsy Guard']},
+            {id: 'shantae-sky', label: 'Sky & Wrench', tags: ['Bird Whistle', 'Egg Bomb', 'Wrench Fly', 'Glide', 'Encouragement']},
+            {id: 'shantae-rottytops', label: 'Rottytops (Zombie)', tags: ['Zombie Walk', 'Leg Throw', 'Head Detach', 'Hug/Bite', 'Casual Wave']},
+            {id: 'shantae-tinkerbat', label: 'Tinkerbat (Pirate Minion)', tags: ['Cutlass Jab', 'Cannon Load', 'Run Panic', 'Salute', 'Poof (Defeat)']}
+        ]
+    },
+    {
+        label: "Disney's Tarzan (1999 Platformer)",
+        id: "game_tarzan",
+        options: [
+            {id: 'tarzan-adult', label: 'Tarzan (Adult Hero)', tags: ['Jungle Idle', 'Sprint', 'Spear Jab', 'Knife Slash', 'Vine Swing', 'Tree Slide', 'Ground Slam', 'Chest Beat Yell']},
+            {id: 'tarzan-young', label: 'Young Tarzan', tags: ['Scramble Run', 'Fruit Throw', 'Somersault Jump', 'Tree Slide', 'Chimp Play', 'Curious']},
+            {id: 'tarzan-terk', label: 'Terk (Terkina)', tags: ['Chest Beat', 'Rolling Tumble', 'Banana Throw', 'Laugh', 'Tantrum', 'Dance']},
+            {id: 'tarzan-tantor', label: 'Tantor (Elephant)', tags: ['Trunk Slam', 'Trumpet Panic', 'Heavy Stomp', 'Charge', 'Peanut Snack']},
+            {id: 'tarzan-jane', label: 'Jane Porter', tags: ['Parasol Glide', 'Sketchpad Draw', 'Baboon Escape Run', 'Polite Wave', 'Cheer']},
+            {id: 'tarzan-clayton', label: 'Clayton (Hunter)', tags: ['Shotgun Blast', 'Machete Slash', 'Axe Chop', 'Cigar Scowl', 'Rage Yell']},
+            {id: 'tarzan-sabor', label: 'Sabor (Leopard Boss)', tags: ['Stalk', 'Pounce', 'Claw Swipe', 'Fierce Growl', 'Leap Attack', 'Defeat']}
+        ]
+    },
+
     // --- MODERN MOBILE & UBIART ---
     {
         label: "Super Mario Run (Mobile)",

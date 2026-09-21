@@ -21,6 +21,24 @@ export interface VideoFile {
 
 export type FeatureTab = string;
 
+export type RetroGameStyle = 
+  | 'maple_story'
+  | 'shantae_pirate_curse'
+  | 'tarzan_1999'
+  | 'classic_platformer'
+  | 'metal_slug'
+  | 'castlevania'
+  | 'pokemon_gba';
+
+export interface GameStyleOption {
+  id: RetroGameStyle;
+  name: string;
+  subtitle: string;
+  era: string;
+  badge: string;
+  description: string;
+}
+
 export interface HistoryItem {
   id: string;
   timestamp: number;

@@ -2,6 +2,7 @@ import React, { useRef, useState } from 'react';
 import type { VideoFile } from '../types';
 import { CopyIcon } from './icons/CopyIcon';
 import { PasteIcon } from './icons/PasteIcon';
+import { copyTextToClipboard } from '../services/clipboardUtils';
 
 interface VideoUploaderProps {
   onFileSelect: (videoFile: VideoFile | null) => void;
@@ -80,15 +81,13 @@ const VideoUploader: React.FC<VideoUploaderProps> = ({ onFileSelect, video, labe
     e.stopPropagation();
     if (!video) return;
     try {
-        const response = await fetch(video.previewUrl);
-        const blob = await response.blob();
-        await navigator.clipboard.write([
-            new ClipboardItem({ [blob.type]: blob })
-        ]);
-        setCopySuccess(true);
-        setTimeout(() => setCopySuccess(false), 2000);
+        const success = await copyTextToClipboard(video.previewUrl);
+        if (success) {
+            setCopySuccess(true);
+            setTimeout(() => setCopySuccess(false), 2000);
+        }
     } catch (err) {
-        console.error('Failed to copy video:', err);
+        console.warn('Failed to copy video URL to clipboard:', err);
     }
   };
 

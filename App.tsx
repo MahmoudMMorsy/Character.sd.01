@@ -34,6 +34,7 @@ import AdultToChild from './components/AdultToChild';
 import MannequinHeadConverter from './components/MannequinHeadConverter';
 import AggressivePixelSprite from './components/AggressivePixelSprite';
 import RetroPixelSprite from './components/RetroPixelSprite';
+import BatchProcessor from './components/BatchProcessor';
 import GridSplitter from './components/GridSplitter';
 import LayerComposer from './components/LayerComposer';
 import RetroCelAnimation from './components/RetroCelAnimation';
@@ -44,7 +45,7 @@ import {
   loadHistoryFromFirestore, 
   deleteHistoryItemFromFirestore 
 } from './services/firebase';
-import { Tv as TvIcon } from 'lucide-react';
+import { Tv as TvIcon, Layers as LayersIcon } from 'lucide-react';
 
 import type { FeatureTab, HistoryItem } from './types';
 import { MagicWandIcon } from './components/icons/MagicWandIcon';
@@ -71,6 +72,7 @@ import { FaceSmileIcon } from './components/icons/FaceSmileIcon';
 const TABS = [
   { id: 'retro-cel', label: 'Retro Cel', icon: TvIcon, component: <RetroCelAnimation /> },
   { id: '10-variations', label: '10 Ideas', icon: MagicWandIcon, component: <DesignVariations /> },
+  { id: 'batch-processor', label: 'Batch Pixel', icon: LayersIcon, component: <BatchProcessor /> },
   { id: 'aggressive-pixel-sprite', label: 'Pixel Boss', icon: SpriteIcon, component: <AggressivePixelSprite /> },
   { id: 'retro-pixel-sprite', label: 'Retro Pixel', icon: SpriteIcon, component: <RetroPixelSprite /> },
   { id: 'grid-splitter', label: 'Grid Split', icon: LayersSplitIcon, component: <GridSplitter /> },
