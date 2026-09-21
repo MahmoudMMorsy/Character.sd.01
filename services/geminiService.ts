@@ -1,7 +1,7 @@
 
 import { GoogleGenAI, Modality, Part, Type } from "@google/genai";
 // import gifshot from "gifshot";
-import { ImageFile } from "../types";
+import { ImageFile, RetroGameStyle, GameStyleOption } from "../types";
 
 const getApiKey = () => {
   // Vite will replace process.env.GEMINI_API_KEY at build time
@@ -27,91 +27,106 @@ const IDENTITY_GUARD = " CRITICAL: The output image must represent the EXACT per
 
 // --- HELPER FUNCTIONS ---
 
-export const fileToGenerativePart = async (file: File): Promise<Part> => {
-  // Validate file
-  if (!(file instanceof Blob)) {
-    throw new Error("Invalid file object provided");
-  }
-  if (file.size === 0) {
-    throw new Error("File is empty");
-  }
+export const imageToOptimizedGenerativePart = async (input: ImageFile | File | Blob | string): Promise<Part> => {
+    let srcUrl = '';
+    let mimeType = 'image/jpeg';
 
-  const processedImagePromise = new Promise<{data: string, mimeType: string}>((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onloadend = () => {
-        if (typeof reader.result === 'string') {
-            // Compress image if it's too large or if it's a PNG (to save space)
-            if (file.type.startsWith('image/')) {
-                const img = new Image();
-                img.onload = () => {
-                    const MAX_WIDTH = 768;
-                    const MAX_HEIGHT = 768;
-                    let width = img.width;
-                    let height = img.height;
-
-                    if (width > MAX_WIDTH || height > MAX_HEIGHT || file.size > 500000) {
-                        const ratio = Math.min(MAX_WIDTH / width, MAX_HEIGHT / height);
-                        width = Math.round(width * ratio);
-                        height = Math.round(height * ratio);
-                        
-                        const canvas = document.createElement('canvas');
-                        canvas.width = width;
-                        canvas.height = height;
-                        const ctx = canvas.getContext('2d');
-                        if (ctx) {
-                            // Fill with white background in case of transparent PNG to JPEG conversion
-                            ctx.fillStyle = '#FFFFFF';
-                            ctx.fillRect(0, 0, width, height);
-                            ctx.drawImage(img, 0, 0, width, height);
-                            
-                            // Force JPEG for better compression
-                            const targetMimeType = 'image/jpeg';
-                            const dataUrl = canvas.toDataURL(targetMimeType, 0.8);
-                            resolve({
-                                data: dataUrl.split(',')[1],
-                                mimeType: targetMimeType
-                            });
-                            return;
-                        }
-                    }
-                    
-                    const base64Part = reader.result?.toString().split(',')[1];
-                    if (base64Part) resolve({ data: base64Part, mimeType: file.type });
-                    else reject(new Error("Failed to extract base64 data"));
-                };
-                img.onerror = () => {
-                    const base64Part = reader.result?.toString().split(',')[1];
-                    if (base64Part) resolve({ data: base64Part, mimeType: file.type });
-                    else reject(new Error("Failed to extract base64 data"));
-                };
-                img.src = reader.result;
-            } else {
-                const base64Part = reader.result.split(',')[1];
-                if (base64Part) {
-                    resolve({ data: base64Part, mimeType: file.type });
-                } else {
-                    reject(new Error("Failed to extract base64 data"));
-                }
-            }
+    if (typeof input === 'string') {
+        srcUrl = input.startsWith('data:') ? input : `data:image/jpeg;base64,${input}`;
+    } else if (input && typeof input === 'object' && 'file' in input && input.file) {
+        mimeType = input.file.type || 'image/jpeg';
+        if (input.previewUrl && !input.previewUrl.startsWith('blob:')) {
+            srcUrl = input.previewUrl;
+        } else if (input.base64 && input.base64.length < 350000) {
+            srcUrl = input.base64;
         } else {
-            reject(new Error("Failed to read file as base64 string"));
+            srcUrl = await new Promise<string>((resolve, reject) => {
+                const r = new FileReader();
+                r.onload = () => resolve(r.result as string);
+                r.onerror = reject;
+                r.readAsDataURL(input.file);
+            });
         }
-    };
-    reader.onerror = () => reject(new Error(`FileReader failed to read file: ${reader.error?.message || 'Unknown error'}`));
-    reader.readAsDataURL(file);
-  });
-  
-  const processed = await processedImagePromise;
-  
-  return {
-    inlineData: {
-      data: processed.data,
-      mimeType: processed.mimeType,
-    },
-  };
+    } else if (input instanceof Blob) {
+        mimeType = input.type || 'image/jpeg';
+        srcUrl = await new Promise<string>((resolve, reject) => {
+            const r = new FileReader();
+            r.onload = () => resolve(r.result as string);
+            r.onerror = reject;
+            r.readAsDataURL(input);
+        });
+    }
+
+    if (!srcUrl) {
+        throw new Error("Invalid or empty image source provided.");
+    }
+
+    return new Promise<Part>((resolve, reject) => {
+        const img = new Image();
+        img.crossOrigin = 'anonymous';
+        img.onload = () => {
+            const MAX_DIM = 768;
+            let w = img.naturalWidth || img.width || 512;
+            let h = img.naturalHeight || img.height || 512;
+
+            const scale = Math.min(1, MAX_DIM / Math.max(w, h));
+            w = Math.max(1, Math.round(w * scale));
+            h = Math.max(1, Math.round(h * scale));
+
+            const canvas = document.createElement('canvas');
+            canvas.width = w;
+            canvas.height = h;
+            const ctx = canvas.getContext('2d');
+            if (!ctx) {
+                const b64 = srcUrl.includes(',') ? srcUrl.split(',')[1] : srcUrl;
+                resolve({ inlineData: { data: b64, mimeType } });
+                return;
+            }
+
+            // Fill white background for transparent PNGs converted to JPEG
+            ctx.fillStyle = '#FFFFFF';
+            ctx.fillRect(0, 0, w, h);
+            ctx.drawImage(img, 0, 0, w, h);
+
+            const targetMime = 'image/jpeg';
+            const compressed = canvas.toDataURL(targetMime, 0.82);
+            const data = compressed.split(',')[1];
+            resolve({
+                inlineData: {
+                    data,
+                    mimeType: targetMime
+                }
+            });
+        };
+        img.onerror = () => {
+            const b64 = srcUrl.includes(',') ? srcUrl.split(',')[1] : srcUrl;
+            resolve({ inlineData: { data: b64, mimeType } });
+        };
+        img.src = srcUrl;
+    });
+};
+
+export const fileToGenerativePart = async (file: File): Promise<Part> => {
+    if (!(file instanceof Blob)) {
+        throw new Error("Invalid file object provided");
+    }
+    if (file.size === 0) {
+        throw new Error("File is empty");
+    }
+    return imageToOptimizedGenerativePart(file);
 };
 
 const imageToDataUrl = (base64: string, mimeType: string) => `data:${mimeType};base64,${base64}`;
+
+const normalizeAspectRatio = (ratio?: string): "1:1" | "3:4" | "4:3" | "9:16" | "16:9" | undefined => {
+    if (!ratio) return undefined;
+    if (ratio === "1:1" || ratio === "3:4" || ratio === "4:3" || ratio === "9:16" || ratio === "16:9") {
+        return ratio;
+    }
+    if (ratio === "2:3") return "3:4";
+    if (ratio === "3:2") return "4:3";
+    return "1:1";
+};
 
 const callGeminiImage = async (parts: Part[], aspectRatio?: string): Promise<string> => {
     // Basic fallback for offline/local mode simulation if API key is missing
@@ -125,18 +140,18 @@ const callGeminiImage = async (parts: Part[], aspectRatio?: string): Promise<str
     }
 
     let attempt = 0;
-    const maxRetries = 3; // Retry up to 3 times for rate limits
-    const baseDelay = 5000; 
+    const maxRetries = 4; // Allow enough retries to ride out rate limit and transient proxy windows
 
     while (attempt <= maxRetries) {
         try {
             const ai = new GoogleGenAI({ apiKey: getApiKey() });
+            const validRatio = normalizeAspectRatio(aspectRatio);
             const response = await ai.models.generateContent({
-                model: 'gemini-2.5-flash-image',
+                model: 'gemini-3.1-flash-lite-image',
                 contents: { parts },
-                config: aspectRatio ? {
+                config: validRatio ? {
                     imageConfig: {
-                        aspectRatio: aspectRatio
+                        aspectRatio: validRatio
                     }
                 } : undefined
             });
@@ -152,21 +167,66 @@ const callGeminiImage = async (parts: Part[], aspectRatio?: string): Promise<str
                  
                  for (const part of candidate.content?.parts || []) {
                      if (part.inlineData) {
-                         return imageToDataUrl(part.inlineData.data, part.inlineData.mimeType);
+                         return imageToDataUrl(part.inlineData.data, part.inlineData.mimeType || 'image/png');
                      }
                  }
             }
             // If we get here, the model returned an empty response (often refusal without explicit safety flag)
             throw new Error('The model refused to generate an image for this prompt. Try simplifying the request or using a clearer image.');
         } catch (error: any) {
-            const msg = error.message || '';
-            const isRateLimit = msg.includes('429') || msg.includes('RESOURCE_EXHAUSTED') || msg.includes('Quota exceeded') || msg.includes('503');
-            const isSafety = msg.includes('safety') || msg.includes('blocked');
+            let msg = '';
+            if (typeof error === 'string') {
+                msg = error;
+            } else if (error?.message) {
+                msg = error.message;
+            } else {
+                try {
+                    msg = JSON.stringify(error);
+                } catch {
+                    msg = String(error);
+                }
+            }
 
-            if (isRateLimit && attempt < maxRetries) {
+            const isRateLimit = msg.includes('429') || msg.includes('RESOURCE_EXHAUSTED') || msg.includes('Quota exceeded');
+            const isRpcXhrError = msg.includes('Rpc failed') || msg.includes('xhr error') || msg.includes('ProxyUnaryCall') || msg.includes('error code: 6');
+            const isTransientError = 
+                isRateLimit ||
+                isRpcXhrError ||
+                msg.includes('500') || 
+                msg.includes('502') || 
+                msg.includes('503') || 
+                msg.includes('504') || 
+                msg.includes('Failed to fetch') || 
+                msg.includes('NetworkError') ||
+                msg.includes('"UNKNOWN"') ||
+                msg.includes('UNKNOWN');
+            const isSafety = msg.includes('safety') || msg.includes('blocked');
+            const isPermission = msg.includes('403') || msg.includes('PERMISSION_DENIED') || msg.includes('does not have permission');
+            const isZeroLimit = msg.includes('limit: 0') || (msg.includes('Quota exceeded') && msg.includes('free_tier'));
+
+            if (isPermission || isZeroLimit) {
+                console.error("Gemini Image API Permission/Quota error:", error);
+                throw new Error("توليد الصور بالذكاء الاصطناعي يتطلب حساباً مفعلاً به كوتا توليد الصور (Free tier limit is 0). يمكنك تفعيل الوضع المحلي (LOCAL) من الأعلى للتشغيل الفوري بدون انتظار.");
+            }
+
+            if (isTransientError && !isZeroLimit && attempt < maxRetries) {
                 attempt++;
-                const delayTime = baseDelay * Math.pow(2, attempt); // 10s, 20s, 40s
-                console.warn(`Gemini API busy. Retrying in ${delayTime}ms...`);
+                let delayTime = 2500;
+                
+                // Parse server suggested retry delay if available
+                const retryMatch = msg.match(/retry in ([0-9.]+)s/i) || msg.match(/"retryDelay":\s*"([0-9.]+)s"/i);
+                if (retryMatch && retryMatch[1]) {
+                    delayTime = Math.ceil(parseFloat(retryMatch[1]) * 1000) + 1500;
+                } else if (isRateLimit) {
+                    delayTime = Math.min(8000 + (attempt * 6000), 26000);
+                } else if (isRpcXhrError) {
+                    // For RPC proxy/XHR interruptions, quick exponential backoff
+                    delayTime = Math.min(2000 * Math.pow(1.6, attempt), 9000);
+                } else {
+                    delayTime = Math.min(2500 * Math.pow(1.5, attempt), 10000);
+                }
+
+                console.warn(`Transient Gemini API / Network error (attempt ${attempt}/${maxRetries}): Retrying in ${Math.round(delayTime / 1000)}s...`);
                 await new Promise(resolve => setTimeout(resolve, delayTime));
                 continue;
             }
@@ -174,9 +234,20 @@ const callGeminiImage = async (parts: Part[], aspectRatio?: string): Promise<str
             if (isSafety) {
                 throw error;
             }
+
+            if (isRateLimit) {
+                console.error("Gemini API Rate Limit exceeded:", error);
+                throw new Error("تجاوزت الحد المسموح به من الطلبات في الدقيقة (Rate limit). يُرجى الانتظار 30 ثانية ثم الضغط على زر إعادة المحاولة.");
+            }
             
+            if (isRpcXhrError) {
+                console.error("Gemini API RPC XHR Proxy Error:", error);
+                throw new Error("تعذر الاتصال بخدمة الذكاء الاصطناعي مؤقتاً بسبب انقطاع في الشبكة أو ضغط على الخادم (Proxy RPC Timeout). يُرجى إعادة المحاولة.");
+            }
+
             console.error("Gemini API Error:", error);
-            throw new Error(msg || "Failed to generate image");
+            const cleanMsg = msg.replace(/https:\/\/[^\s,]+/g, '[service-endpoint]');
+            throw new Error(cleanMsg || "Failed to generate image. Please try again.");
         }
     }
     throw new Error("Service is currently busy. Please try again later.");
@@ -252,56 +323,51 @@ const callGeminiImageHighQuality = async (parts: Part[]): Promise<string> => {
         throw new Error("Local mode: Cannot generate new image without API key.");
     }
 
-    const ai = new GoogleGenAI({ apiKey: getApiKey() });
-    const response = await ai.models.generateContent({
-        model: 'gemini-2.5-flash-image',
-        contents: { parts },
-        config: {
-            imageConfig: {
-                aspectRatio: "1:1"
+    try {
+        const ai = new GoogleGenAI({ apiKey: getApiKey() });
+        const response = await ai.models.generateContent({
+            model: 'gemini-3.1-flash-image',
+            contents: { parts },
+            config: {
+                imageConfig: {
+                    aspectRatio: "1:1"
+                }
             }
-        }
-    });
+        });
 
-    const candidates = response.candidates;
-    if (candidates && candidates.length > 0) {
-        const candidate = candidates[0];
-        if (candidate.finishReason === 'SAFETY') {
-            throw new Error('Image generation blocked by safety filters. The model detected content it cannot process. Please try a different photo.');
-        }
-        for (const part of candidate.content?.parts || []) {
-            if (part.inlineData) {
-                return imageToDataUrl(part.inlineData.data, part.inlineData.mimeType);
+        const candidates = response.candidates;
+        if (candidates && candidates.length > 0) {
+            const candidate = candidates[0];
+            if (candidate.finishReason === 'SAFETY') {
+                throw new Error('Image generation blocked by safety filters. The model detected content it cannot process. Please try a different photo.');
+            }
+            for (const part of candidate.content?.parts || []) {
+                if (part.inlineData) {
+                    return imageToDataUrl(part.inlineData.data, part.inlineData.mimeType || 'image/png');
+                }
             }
         }
+        throw new Error("Failed to generate high-quality image.");
+    } catch (e: any) {
+        const msg = e.message || '';
+        if (msg.includes('403') || msg.includes('PERMISSION_DENIED') || msg.includes('does not have permission')) {
+            throw new Error("Gemini API Permission Denied (403): High-quality image generation requires an active Gemini API key with billing/permissions enabled.");
+        }
+        // Try fallback to lite model
+        return callGeminiImage(parts, "1:1");
     }
-    throw new Error("Failed to generate high-quality image.");
 };
 
 export const convertToRealisticAnatomy = async (image: ImageFile): Promise<string> => {
-    const base64Part = image.base64 ? image.base64.split(',')[1] : (await fileToGenerativePart(image.file)).inlineData?.data;
-    if (!base64Part) throw new Error("Failed to get image data");
-    
-    const parts: Part[] = [{
-        inlineData: {
-            data: base64Part,
-            mimeType: image.file.type,
-        }
-    }];
+    const imagePart = await imageToOptimizedGenerativePart(image);
+    const parts: Part[] = [imagePart];
     parts.push({ text: "Full body reference of a female human in T-pose, neutral lighting, solid white background, high-resolution digital 3D model, realistic skin texture, professional anatomy reference, no clothing, no accessories, clean and clear view, no annotations, no sketches, no wireframes, no gray clay. The skin tone should be vibrant, natural, and realistic." });
     return callGeminiImage(parts);
 };
 
 export const convertToRealisticImage = async (image: ImageFile): Promise<string> => {
-    const base64Part = image.base64 ? image.base64.split(',')[1] : (await fileToGenerativePart(image.file)).inlineData?.data;
-    if (!base64Part) throw new Error("Failed to get image data");
-
-    const parts: Part[] = [{
-        inlineData: {
-            data: base64Part,
-            mimeType: image.file.type,
-        }
-    }];
+    const imagePart = await imageToOptimizedGenerativePart(image);
+    const parts: Part[] = [imagePart];
     parts.push({ text: `[CRITICAL IDENTITY LOCK]: You MUST preserve the exact person's facial features and identity from the source image.
     
     1. FRONT PROFILE: The subject MUST be looking directly at the camera in a centered front profile view.
@@ -312,15 +378,8 @@ export const convertToRealisticImage = async (image: ImageFile): Promise<string>
 };
 
 export const convertToAggressivePixelSprite = async (image: ImageFile, mood: 'aggressive' | 'normal' = 'aggressive'): Promise<string> => {
-    const base64Part = image.base64 ? image.base64.split(',')[1] : (await fileToGenerativePart(image.file)).inlineData?.data;
-    if (!base64Part) throw new Error("Failed to get image data");
-
-    const parts: Part[] = [{
-        inlineData: {
-            data: base64Part,
-            mimeType: image.file.type,
-        }
-    }];
+    const imagePart = await imageToOptimizedGenerativePart(image);
+    const parts: Part[] = [imagePart];
     
     const aggressiveText = `Analyze the main character or animal in the provided image. Crucially, YOU MUST PRESERVE THE EXACT GENDER/SEX OF THE ORIGINAL CHARACTER. If the character is female, the sprite must clearly be female (preserving feminine features, hair, or clothing). If male, it must be male. Generate a high-detail 16-bit pixel art character sprite of an aggressive, anthropomorphic version of whatever creature or person is in the image, standing on two legs. The character has a distinct, chibi-style, compact body structure: broad-shouldered and heavily muscled, with powerful limbs and large, clawed hands and feet, but overall short and stout. The head is large, with a twisted, sinister expression of pure rage and malice. The eyes are narrowed, burning with a red-hot malevolent glow. The mouth is open in a wide, ferocious snarl, revealing jagged, sharp teeth. Drool and spittle are rendered in small pixel details. The fur/skin/clothing is shaggy and disheveled. The character is posed ready for attack, with one hand clenched in a powerful fist. Clean, sharp dark outlines define the entire figure. Hyper-saturated colors and dithered shading are used for a dynamic, console-era feel. Faint blocky retro glow. White, plain background for immediate character isolation.`;
     
@@ -330,31 +389,140 @@ export const convertToAggressivePixelSprite = async (image: ImageFile, mood: 'ag
     return callGeminiImage(parts);
 };
 
-export const convertToRetroPixelSprite = async (image: ImageFile): Promise<string> => {
-    const base64Part = image.base64 ? image.base64.split(',')[1] : (await fileToGenerativePart(image.file)).inlineData?.data;
-    if (!base64Part) throw new Error("Failed to get image data");
+export const RETRO_GAME_STYLES: GameStyleOption[] = [
+    {
+        id: 'maple_story',
+        name: 'MapleStory (메이플스토리)',
+        subtitle: 'Nexon 2D Side-Scrolling MMORPG',
+        era: '2003 / 2D Chibi PC',
+        badge: 'Chibi Anime',
+        description: 'Iconic cute 2.5-head chibi proportions, large expressive anime eyes, clean pixel outlines, vibrant pastel palette, and charming hairstyles.'
+    },
+    {
+        id: 'shantae_pirate_curse',
+        name: "Shantae and the Pirate's Curse",
+        subtitle: 'WayForward High-End 16/32-Bit Action',
+        era: '2014 / 3DS & GBA Style',
+        badge: 'Vibrant 32-Bit',
+        description: 'Fluid dynamic anime proportions, crisp black contours, rich jewel tones (crimson, purple, gold), flowing hair, and energetic pirate-fantasy posing.'
+    },
+    {
+        id: 'tarzan_1999',
+        name: "Disney's Tarzan (1999)",
+        subtitle: 'Eurocom / Digital Eclipse Action Platformer',
+        era: '1999 / PS1 & PC Platformer',
+        badge: 'Late 90s Disney 2D',
+        description: 'Athletic anatomical platformer sprites, lush jungle color palette (sepia, emerald, mahogany), hand-drawn Disney animation feel, and dynamic crouching stances.'
+    },
+    {
+        id: 'classic_platformer',
+        name: 'Classic 8-Bit / 16-Bit Platformer',
+        subtitle: 'Super Mario World & Adventure Island',
+        era: 'NES / SNES Classic',
+        badge: 'Retro 16-Bit',
+        description: 'Iconic chunky pixel blocks, bold outlines, nostalgic arcade color palette, and jump-and-run platformer silhouettes.'
+    },
+    {
+        id: 'metal_slug',
+        name: 'Metal Slug Arcade',
+        subtitle: 'SNK / Nazca Neo-Geo 2D Masterpiece',
+        era: 'Neo Geo Arcade',
+        badge: 'Hyper-Detailed',
+        description: 'Masterclass hyper-detailed military 2D pixel art, gritty hand-placed dithering, dynamic fabric folds, and combat-ready proportions.'
+    },
+    {
+        id: 'castlevania',
+        name: 'Castlevania: Symphony of the Night',
+        subtitle: 'Konami 32-Bit Gothic Metroidvania',
+        era: 'PS1 / GBA Gothic',
+        badge: 'Gothic 32-Bit',
+        description: 'Sophisticated gothic dark fantasy aesthetic, aristocratic cloak/attire flow, moody highlights, and elegant weapon stances.'
+    },
+    {
+        id: 'pokemon_gba',
+        name: 'Pokémon Emerald / Gen 3 GBA',
+        subtitle: 'Game Boy Advance Trainer Sprite',
+        era: 'GBA 16-Bit',
+        badge: 'GBA Anime',
+        description: 'Clean bright anime trainer sprite aesthetic with friendly proportions, bold outline contours, and classic handheld color palettes.'
+    }
+];
 
-    const parts: Part[] = [{
-        inlineData: {
-            data: base64Part,
-            mimeType: image.file.type,
-        }
-    }];
+export const convertToRetroPixelSprite = async (image: ImageFile, gameStyle: RetroGameStyle | string = 'maple_story'): Promise<string> => {
+    const imagePart = await imageToOptimizedGenerativePart(image);
+    const parts: Part[] = [imagePart];
+
+    let stylePrompt = '';
+
+    if (gameStyle === 'maple_story') {
+        stylePrompt = `GENERATE AN AUTHENTIC MAPLESTORY 2D MMORPG PIXEL ART CHARACTER SPRITE SHEET.
+Style & Aesthetic: Official MapleStory (Nexon) 2D side-scrolling cute chibi MMORPG pixel art.
+Proportions: Cute chibi proportions (approx 2.5 to 3 heads tall), large oversized round head, adorable glossy anime eyes with expressive sparkle, cute tiny mouth, distinctive anime hairstyle with clean stepped pixel shading.
+Contour & Palette: Bold clean dark pixel outlines, vibrant and pastel anime color palette, smooth cell dithering, fantasy adventurer outfit adapted faithfully from the uploaded character.
+Preserve: CRUCIALLY PRESERVE THE EXACT GENDER, ETHNICITY/SKIN TONE, HAIR COLOR, AND DISTINCTIVE FACIAL TRAITS of the original character.
+Angles & Arrangement: The sprite sheet MUST display the character shown in 5 DIFFERENT DIRECTIONS/ANGLES:
+1) Front-facing idle pose
+2) Back view
+3) Left walking profile
+4) Right walking profile
+5) 3/4 angled action stance
+All 5 sprites arranged neatly side-by-side on a completely plain, solid, pure white background for effortless character isolation. No props, no scenery, no floor shadow.`;
+    } else if (gameStyle === 'shantae_pirate_curse') {
+        stylePrompt = `GENERATE AN AUTHENTIC "SHANTAE AND THE PIRATE'S CURSE" (WayForward) 16-BIT / 32-BIT PIXEL ART SPRITE SHEET.
+Style & Aesthetic: Signature WayForward high-energy 2D action-platformer pixel art (as seen in Shantae and the Pirate's Curse for 3DS / GBA / PC).
+Proportions: Athletic, stylized, expressive anime hero proportions with dynamic fluid silhouette, dramatic voluminous flowing hair, and ornate pirate/Arabian fantasy adventurer attire inspired by the original character's clothing.
+Line Art & Palette: Crisp, razor-sharp dark pixel contours, hyper-vibrant jewel-tone palette (rich purples, vivid teals, glowing golds, vibrant reds), high-contrast anime cell pixel shading with clean specular highlights.
+Preserve: CRUCIALLY PRESERVE THE EXACT GENDER, SKIN TONE, HAIR COLOR, AND EYE IDENTITY of the original character.
+Angles & Arrangement: The sprite sheet MUST show the character rendered in 5 DIFFERENT POSES/ANGLES:
+1) Front ready stance
+2) Back view
+3) Left sprint/run profile
+4) Right sprint/run profile
+5) 3/4 combat battle stance
+Arranged horizontally side-by-side on a pure, solid, clean white background with no background scenery or artifacts for instant sprite extraction.`;
+    } else if (gameStyle === 'tarzan_1999') {
+        stylePrompt = `GENERATE AN AUTHENTIC "DISNEY'S TARZAN (1999 PC / PS1 / GBC)" PLATFORMER PIXEL ART SPRITE SHEET.
+Style & Aesthetic: Classic late-90s Eurocom / Digital Eclipse 1999 Disney's Tarzan action-platformer sprite art.
+Proportions & Anatomy: Athletic heroic proportions with fluid Disney-style anatomical lines, agile silhouette, jungle-ready adventure outfit adapting the character's clothing into rugged adventure gear (or tunic/loincloth/jungle expedition style).
+Palette & Shading: Earthy, lush 1999 adventure game palette: warm sun-tanned skin tones, lush jungle greens, rich mahogany browns, warm golden hour ambient rim lighting, and detailed 16-bit/32-bit dithering typical of the 1999 Tarzan PC/PS1 era.
+Preserve: CRUCIALLY PRESERVE THE ORIGINAL CHARACTER'S GENDER, FACIAL IDENTITY, HAIR TEXTURE, AND DISTINCTIVE FEATURES.
+Angles & Arrangement: The sprite sheet MUST depict the character from 5 DIFFERENT DIRECTIONS:
+1) Front heroic standing pose
+2) Back view
+3) Left jungle sprint silhouette
+4) Right jungle sprint silhouette
+5) 3/4 dynamic crouching vine/action pose
+Arranged side-by-side in a horizontal row on a solid, clean, pure white background for immediate extraction.`;
+    } else if (gameStyle === 'metal_slug') {
+        stylePrompt = `GENERATE A NEO GEO ARCADE 2D SPRITE SHEET in the legendary pixel art style of Metal Slug (Nazca / SNK).
+Style: Masterclass hyper-detailed 2D arcade pixel art, military-tactical comic flair, gritty hand-placed pixel dithering, dynamic folds in cloth, combat-ready silhouette.
+Crucially, preserve the original character's gender, skin tone, and distinguishing facial markers.
+Show the character in 5 distinct poses and angles (Front, Back, Left run, Right run, 3/4 tactical aim) horizontally arranged on a solid pure white background.`;
+    } else if (gameStyle === 'castlevania') {
+        stylePrompt = `GENERATE A 32-BIT GOTHIC ACTION-RPG METROIDVANIA SPRITE SHEET in the iconic style of Castlevania: Symphony of the Night (Konami PS1/GBA).
+Style: Elegant gothic dark fantasy aesthetic, aristocratic cape/coat flow, sophisticated muted jewel palette with moody highlights, detailed weapon/armor pixel shading.
+Crucially, preserve the original character's gender, ethnicity, and recognizable traits.
+Show the character in 5 directions (Front, Back, Left walk, Right walk, 3/4 gothic pose) side-by-side on a plain solid white background.`;
+    } else if (gameStyle === 'pokemon_gba') {
+        stylePrompt = `GENERATE A CLASSIC NINTENDO GBA OVERWORLD & BATTLE SPRITE SHEET in the style of Pokémon Emerald / Gen 3 GBA.
+Style: Clean 16-bit anime trainer pixel art with friendly proportions, charming bold contours, vibrant limited GBA color palettes.
+Crucially, preserve the original character's gender, hair, and clothing identity.
+5 distinct directional angles (Front, Back, Left, Right, 3/4) arranged horizontally on a pure solid white background.`;
+    } else {
+        stylePrompt = `GENERATE A RETRO 8-BIT OR 16-BIT PIXEL ART CHARACTER SPRITE SHEET in the style of classic platformer games like Super Mario Bros and Adventure Island.
+Crucially, YOU MUST PRESERVE THE EXACT GENDER/SEX OF THE ORIGINAL CHARACTER.
+The character should have simple, stylized retro gaming proportions, with vibrant, limited color palettes and distinct pixelation blocks.
+The image MUST contain the character shown from 5 DIFFERENT DIRECTIONS/ANGLES (Front view, Back view, Left profile, Right profile, and a 3/4 angle view) arranged side-by-side.
+Ensure the characters are placed entirely alone on a completely plain, solid white background with absolutely no other background elements, scenery, or props.`;
+    }
     
-    parts.push({ text: `Analyze the main character in the provided image. GENERATE A RETRO 8-BIT OR 16-BIT PIXEL ART CHARACTER SPRITE SHEET in the style of classic platformer games like Super Mario Bros and Adventure Island. Crucially, YOU MUST PRESERVE THE EXACT GENDER/SEX OF THE ORIGINAL CHARACTER. The character should have simple, stylized retro gaming proportions, with vibrant, limited color palettes and distinct pixelation blocks. The image MUST contain the character shown from 5 DIFFERENT DIRECTIONS/ANGLES (e.g., front view, back view, left profile, right profile, and a 3/4 angle view) arranged side-by-side. Ensure the characters are placed entirely alone on a completely plain, solid white background with absolutely no other background elements, scenery, or props, for perfect and immediate character isolation.` });
+    parts.push({ text: `Analyze the main character in the provided image. ${stylePrompt}` });
     return callGeminiImage(parts);
 };
 
 export const convertToChild = async (image: ImageFile): Promise<string> => {
-    const base64Part = image.base64 ? image.base64.split(',')[1] : (await fileToGenerativePart(image.file)).inlineData?.data;
-    if (!base64Part) throw new Error("Failed to get image data");
-
-    const parts: Part[] = [{
-        inlineData: {
-            data: base64Part,
-            mimeType: image.file.type,
-        }
-    }];
+    const imagePart = await imageToOptimizedGenerativePart(image);
+    const parts: Part[] = [imagePart];
     
     parts.push({ text: `[CRITICAL IDENTITY LOCK]: This is an AI age-regression task for biometric identity matching.
     
@@ -375,15 +543,8 @@ export const convertToChild = async (image: ImageFile): Promise<string> => {
 };
 
 export const convertToMannequinHead = async (image: ImageFile, preserveTexture: boolean): Promise<string> => {
-    const base64Part = image.base64 ? image.base64.split(',')[1] : (await fileToGenerativePart(image.file)).inlineData?.data;
-    if (!base64Part) throw new Error("Failed to get image data");
-
-    const parts: Part[] = [{
-        inlineData: {
-            data: base64Part,
-            mimeType: image.file.type,
-        }
-    }];
+    const imagePart = await imageToOptimizedGenerativePart(image);
+    const parts: Part[] = [imagePart];
     
     const texturePrompt = preserveTexture 
         ? "Keep the ultra-realistic human skin texture, natural pores, and subtle human imperfections completely intact." 
@@ -598,7 +759,7 @@ export const detectSpriteFrames = async (file: File): Promise<{ cols?: number; r
     const imagePart = await fileToGenerativePart(file);
 
     const response = await ai.models.generateContent({
-        model: 'gemini-2.5-flash-image',
+        model: 'gemini-3.8-flash',
         contents: {
             parts: [
                 imagePart,
@@ -708,7 +869,34 @@ export const generateSpriteSheet = async (
 
         // --- BUILD CHARACTER DEFINITION (styleIns) ---
         // Using partial matching for grouped IDs to save space while maintaining specificity
-        if (style.startsWith('mrun-')) {
+        if (style.startsWith('maple-mushmom') || style.startsWith('maple-zakum') || style.startsWith('maple-pinkbean') || style.startsWith('maple-balrog') || style.startsWith('maple-horntail') || style.startsWith('maple-kingslime')) {
+             styleIns = `Style Reference: MapleStory Iconic World Boss (Nexon 2D MMORPG). Aesthetics: Authentic 2D side-scrolling MapleStory epic Boss pixel art. Preserving the boss's iconic scale, cute yet menacing anime features, bold stepped pixel dithering, vibrant arcade color tones. ${sideScrollerCam}`;
+             layoutIns = "Row 1: Idle (Menacing breath & float). Row 2: Walk/Hover. Row 3: Minor Attack/Charge. Row 4: Signature Ultimate Spell/Laser/Slam. Row 5: Area-of-Effect Hazard/Stomp. Row 6: Defensive Guard. Row 7: Hurt/Hit Stun. Row 8: Dramatic Boss Defeat/Explode. Row 9: Enrage/Roar.";
+        } else if (style.startsWith('maple-mushroom') || style.startsWith('maple-slime') || style.startsWith('maple-ribbonpig') || style.startsWith('maple-wildboar') || style.startsWith('maple-evil-eye') || style.startsWith('maple-lupin') || style.startsWith('maple-pepe') || style.startsWith('maple-yeti')) {
+             styleIns = `Style Reference: MapleStory Iconic Monster (Nexon 2D MMORPG). Aesthetics: Authentic 2D cute bouncy MMORPG monster pixel art. Charming squishy proportions, clean dark pixel outlines, expressive oversized eyes, pastel shading. ${sideScrollerCam}`;
+             layoutIns = "Row 1: Idle (Breathing/Jiggling). Row 2: Walk/Hop/Trot. Row 3: High Bounce/Charge. Row 4: Attack (Tackle/Spore/Bite/Peck). Row 5: Special Monster Quirky Action. Row 6: Squish/Crouch. Row 7: Hurt/Impact. Row 8: Defeat (Poof/Pop/Drop). Row 9: Victory Hop/Cheer.";
+        } else if (style.startsWith('maple-mount-') || style.startsWith('maple-turtle')) {
+             styleIns = `Style Reference: MapleStory Iconic Mount & Vehicle (Nexon 2D MMORPG). Aesthetics: Authentic MapleStory mount pixel art designed for chibi rider characters. Distinctive vehicle/creature proportions, vibrant pastel mechanical & fantasy details, crisp dark pixel outlines. ${sideScrollerCam}`;
+             layoutIns = "Row 1: Mount Idle (Breathing/Hover/Engine Idle). Row 2: Mount Trot/Drive/Glide Forward. Row 3: Full Speed Dash/Fly/Turbo. Row 4: Mount Jump/Leap/Altitude Boost. Row 5: Signature Mount Action/Attack/Horn. Row 6: Skidding Brake/Sudden Stop. Row 7: Hurt/Shudder. Row 8: Rest/Sit/Power Down. Row 9: Victory Roar/Cheer Hop.";
+        } else if (style.startsWith('maple-pet-')) {
+             styleIns = `Style Reference: MapleStory Iconic Pet & Companion (Nexon 2D MMORPG). Aesthetics: Ultra-adorable mini chibi pet companion pixel art. Tiny proportions, large glassy emotive eyes, sweet bouncy movement, clean dark pixel outlines. ${sideScrollerCam}`;
+             layoutIns = "Row 1: Pet Idle (Bouncy breathing & ear/tail twitch). Row 2: Cute Trot/Waddle/Float. Row 3: Excited High Hop. Row 4: Pet Signature Trick/Playful Action. Row 5: Feed/Snack Munching. Row 6: Sit/Curl Up. Row 7: Cry/Shy Sweat Drop. Row 8: Sleep/Nap. Row 9: Level Up/Happy Dance Cheer.";
+        } else if (style.startsWith('maple-morph-')) {
+             styleIns = `Style Reference: MapleStory Magical Character Morph (Nexon 2D MMORPG). Aesthetics: Authentic magical transformation avatar pixel art. Playful costume/creature hybrid, clean stepped pixel dithering, vivid arcade colors. ${sideScrollerCam}`;
+             layoutIns = "Row 1: Morph Idle (Breathing). Row 2: Morph Walk/Hop/Slide. Row 3: High Jump. Row 4: Morph Attack/Surprise Move. Row 5: Signature Morph Special. Row 6: Squat/Duck. Row 7: Hurt/Stun. Row 8: Poof/Vanish/Revert. Row 9: Victory Celebration.";
+        } else if (style.startsWith('maple-body-')) {
+             styleIns = `Style Reference: MapleStory Base Character Body & Skin (Nexon 2D MMORPG). Aesthetics: Pure authentic 2.5-head chibi character base body pixel art with customizable skin tone, pristine pixel contours, and classic MapleStory physics. ${sideScrollerCam}`;
+             layoutIns = "Row 1: Stand/Bouncing Breath Idle. Row 2: Chibi Walk Cycle. Row 3: Sprint/Run with Arms Back. Row 4: Jump Up & Float Fall. Row 5: Punch Strike / Weapon Swing. Row 6: Prone/Crouch Down Flat. Row 7: Hurt/Hit Stun. Row 8: Tombstone Drop (Die). Row 9: Level Up Cheer Jump.";
+        } else if (style.startsWith('maple-')) {
+             styleIns = `Style Reference: MapleStory (Nexon 2D MMORPG). Aesthetics: Authentic 2D side-scrolling cute chibi MMORPG pixel art. 2.5-3 heads tall, large expressive anime eyes, stepped pixel shading, clean dark contours, vibrant pastel palette. ${sideScrollerCam}`;
+             layoutIns = "Row 1: Idle (Cute breathing & bobbing). Row 2: Walk/Run. Row 3: Jump/Air float. Row 4: Basic Attack/Weapon Swing. Row 5: Skill Attack (Slash/Magic/Arrow/Flash Jump). Row 6: Prone/Crouch. Row 7: Hurt/Hit. Row 8: Tombstone (Die). Row 9: Level Up/Cheer Win.";
+        } else if (style.startsWith('shantae-')) {
+             styleIns = `Style Reference: Shantae and the Pirate's Curse (WayForward). Aesthetics: Fluid high-energy 16/32-bit anime pixel art. Crisp black contours, vibrant jewel tones, voluminous hair, dynamic combat posing. ${sideScrollerCam}`;
+             layoutIns = "Row 1: Ready Stance (Breathing). Row 2: Run/Dash. Row 3: Jump/Somersault. Row 4: Hair Whip/Pistol Attack. Row 5: Pirate Gear Action (Hat Glide/Cannon/Scimitar). Row 6: Crouch/Slide. Row 7: Hurt/Impact. Row 8: Defeat. Row 9: Belly Dance/Victory.";
+        } else if (style.startsWith('tarzan-')) {
+             styleIns = `Style Reference: Disney's Tarzan (1999 Eurocom/Digital Eclipse). Aesthetics: 1999 late-90s platformer sprite art. Athletic fluid Disney animation silhouette, lush jungle palette (sepia, emerald greens, warm browns), warm rim lighting. ${sideScrollerCam}`;
+             layoutIns = "Row 1: Jungle Alert Stance. Row 2: Jungle Sprint. Row 3: Jump/Tuck. Row 4: Spear Jab/Knife Slash. Row 5: Vine Swing/Tree Slide. Row 6: Crouch/Ground Slam. Row 7: Hurt/Stumble. Row 8: Fall/Defeat. Row 9: Chest Beat Yell/Victory.";
+        } else if (style.startsWith('mrun-')) {
              styleIns = `Style Reference: Super Mario Run (Mobile). Aesthetics: Modern 3D characters rendered as 2D sprites. Vibrant, clean, rim lighting. Side view.`;
              layoutIns = "Row 1: Idle. Row 2: Run. Row 3: Jump. Row 4: Vault/Parkour. Row 5: Roll. Row 6: Wall Slide. Row 7: Spin. Row 8: Victory. Row 9: Bubble/Die.";
         } else if (style.startsWith('radv-')) {
@@ -1468,7 +1656,34 @@ export const generateInPlaceVideo = async (
         const fightingLayout = "Row 1: Stance (Breathing). Row 2: Walk Forward/Back. Row 3: Punch Combo. Row 4: Kick Combo. Row 5: Special Projectile/Move. Row 6: Anti-Air/Uppercut. Row 7: Block/Crouch. Row 8: Hit/Stun. Row 9: KO/Win.";
 
         // --- BUILD CHARACTER DEFINITION (styleIns) ---
-        if (style.startsWith('mrun-')) {
+        if (style.startsWith('maple-mushmom') || style.startsWith('maple-zakum') || style.startsWith('maple-pinkbean') || style.startsWith('maple-balrog') || style.startsWith('maple-horntail') || style.startsWith('maple-kingslime')) {
+             styleIns = `Style Reference: MapleStory Iconic World Boss (Nexon 2D MMORPG). Aesthetics: Authentic 2D side-scrolling MapleStory epic Boss pixel art. Preserving the boss's iconic scale, cute yet menacing anime features, bold stepped pixel dithering, vibrant arcade color tones. ${sideScrollerCam}`;
+             layoutIns = "Row 1: Idle (Menacing breath & float). Row 2: Walk/Hover. Row 3: Minor Attack/Charge. Row 4: Signature Ultimate Spell/Laser/Slam. Row 5: Area-of-Effect Hazard/Stomp. Row 6: Defensive Guard. Row 7: Hurt/Hit Stun. Row 8: Dramatic Boss Defeat/Explode. Row 9: Enrage/Roar.";
+        } else if (style.startsWith('maple-mushroom') || style.startsWith('maple-slime') || style.startsWith('maple-ribbonpig') || style.startsWith('maple-wildboar') || style.startsWith('maple-evil-eye') || style.startsWith('maple-lupin') || style.startsWith('maple-pepe') || style.startsWith('maple-yeti')) {
+             styleIns = `Style Reference: MapleStory Iconic Monster (Nexon 2D MMORPG). Aesthetics: Authentic 2D cute bouncy MMORPG monster pixel art. Charming squishy proportions, clean dark pixel outlines, expressive oversized eyes, pastel shading. ${sideScrollerCam}`;
+             layoutIns = "Row 1: Idle (Breathing/Jiggling). Row 2: Walk/Hop/Trot. Row 3: High Bounce/Charge. Row 4: Attack (Tackle/Spore/Bite/Peck). Row 5: Special Monster Quirky Action. Row 6: Squish/Crouch. Row 7: Hurt/Impact. Row 8: Defeat (Poof/Pop/Drop). Row 9: Victory Hop/Cheer.";
+        } else if (style.startsWith('maple-mount-') || style.startsWith('maple-turtle')) {
+             styleIns = `Style Reference: MapleStory Iconic Mount & Vehicle (Nexon 2D MMORPG). Aesthetics: Authentic MapleStory mount pixel art designed for chibi rider characters. Distinctive vehicle/creature proportions, vibrant pastel mechanical & fantasy details, crisp dark pixel outlines. ${sideScrollerCam}`;
+             layoutIns = "Row 1: Mount Idle (Breathing/Hover/Engine Idle). Row 2: Mount Trot/Drive/Glide Forward. Row 3: Full Speed Dash/Fly/Turbo. Row 4: Mount Jump/Leap/Altitude Boost. Row 5: Signature Mount Action/Attack/Horn. Row 6: Skidding Brake/Sudden Stop. Row 7: Hurt/Shudder. Row 8: Rest/Sit/Power Down. Row 9: Victory Roar/Cheer Hop.";
+        } else if (style.startsWith('maple-pet-')) {
+             styleIns = `Style Reference: MapleStory Iconic Pet & Companion (Nexon 2D MMORPG). Aesthetics: Ultra-adorable mini chibi pet companion pixel art. Tiny proportions, large glassy emotive eyes, sweet bouncy movement, clean dark pixel outlines. ${sideScrollerCam}`;
+             layoutIns = "Row 1: Pet Idle (Bouncy breathing & ear/tail twitch). Row 2: Cute Trot/Waddle/Float. Row 3: Excited High Hop. Row 4: Pet Signature Trick/Playful Action. Row 5: Feed/Snack Munching. Row 6: Sit/Curl Up. Row 7: Cry/Shy Sweat Drop. Row 8: Sleep/Nap. Row 9: Level Up/Happy Dance Cheer.";
+        } else if (style.startsWith('maple-morph-')) {
+             styleIns = `Style Reference: MapleStory Magical Character Morph (Nexon 2D MMORPG). Aesthetics: Authentic magical transformation avatar pixel art. Playful costume/creature hybrid, clean stepped pixel dithering, vivid arcade colors. ${sideScrollerCam}`;
+             layoutIns = "Row 1: Morph Idle (Breathing). Row 2: Morph Walk/Hop/Slide. Row 3: High Jump. Row 4: Morph Attack/Surprise Move. Row 5: Signature Morph Special. Row 6: Squat/Duck. Row 7: Hurt/Stun. Row 8: Poof/Vanish/Revert. Row 9: Victory Celebration.";
+        } else if (style.startsWith('maple-body-')) {
+             styleIns = `Style Reference: MapleStory Base Character Body & Skin (Nexon 2D MMORPG). Aesthetics: Pure authentic 2.5-head chibi character base body pixel art with customizable skin tone, pristine pixel contours, and classic MapleStory physics. ${sideScrollerCam}`;
+             layoutIns = "Row 1: Stand/Bouncing Breath Idle. Row 2: Chibi Walk Cycle. Row 3: Sprint/Run with Arms Back. Row 4: Jump Up & Float Fall. Row 5: Punch Strike / Weapon Swing. Row 6: Prone/Crouch Down Flat. Row 7: Hurt/Hit Stun. Row 8: Tombstone Drop (Die). Row 9: Level Up Cheer Jump.";
+        } else if (style.startsWith('maple-')) {
+             styleIns = `Style Reference: MapleStory (Nexon 2D MMORPG). Aesthetics: Authentic 2D side-scrolling cute chibi MMORPG pixel art. 2.5-3 heads tall, large expressive anime eyes, stepped pixel shading, clean dark contours, vibrant pastel palette. ${sideScrollerCam}`;
+             layoutIns = "Row 1: Idle (Cute breathing & bobbing). Row 2: Walk/Run. Row 3: Jump/Air float. Row 4: Basic Attack/Weapon Swing. Row 5: Skill Attack (Slash/Magic/Arrow/Flash Jump). Row 6: Prone/Crouch. Row 7: Hurt/Hit. Row 8: Tombstone (Die). Row 9: Level Up/Cheer Win.";
+        } else if (style.startsWith('shantae-')) {
+             styleIns = `Style Reference: Shantae and the Pirate's Curse (WayForward). Aesthetics: Fluid high-energy 16/32-bit anime pixel art. Crisp black contours, vibrant jewel tones, voluminous hair, dynamic combat posing. ${sideScrollerCam}`;
+             layoutIns = "Row 1: Ready Stance (Breathing). Row 2: Run/Dash. Row 3: Jump/Somersault. Row 4: Hair Whip/Pistol Attack. Row 5: Pirate Gear Action (Hat Glide/Cannon/Scimitar). Row 6: Crouch/Slide. Row 7: Hurt/Impact. Row 8: Defeat. Row 9: Belly Dance/Victory.";
+        } else if (style.startsWith('tarzan-')) {
+             styleIns = `Style Reference: Disney's Tarzan (1999 Eurocom/Digital Eclipse). Aesthetics: 1999 late-90s platformer sprite art. Athletic fluid Disney animation silhouette, lush jungle palette (sepia, emerald greens, warm browns), warm rim lighting. ${sideScrollerCam}`;
+             layoutIns = "Row 1: Jungle Alert Stance. Row 2: Jungle Sprint. Row 3: Jump/Tuck. Row 4: Spear Jab/Knife Slash. Row 5: Vine Swing/Tree Slide. Row 6: Crouch/Ground Slam. Row 7: Hurt/Stumble. Row 8: Fall/Defeat. Row 9: Chest Beat Yell/Victory.";
+        } else if (style.startsWith('mrun-')) {
              styleIns = `Style Reference: Super Mario Run (Mobile). Aesthetics: Modern 3D characters rendered as 2D sprites. Vibrant, clean, rim lighting. Side view.`;
              layoutIns = "Row 1: Idle. Row 2: Run. Row 3: Jump. Row 4: Vault/Parkour. Row 5: Roll. Row 6: Wall Slide. Row 7: Spin. Row 8: Victory. Row 9: Bubble/Die.";
         } else if (style.startsWith('radv-')) {
@@ -1967,42 +2182,8 @@ ${additionalPrompt}
         
         Output a single square image containing this 2x2 grid.`;
 
-        const ai = new GoogleGenAI({ apiKey });
-        const response = await ai.models.generateContent({
-            model: 'gemini-2.5-flash-image',
-            contents: {
-                parts: [
-                    { inlineData: { data: base64Data, mimeType: imageFile.file.type } },
-                    { text: textPrompt }
-                ]
-            },
-            config: {
-                imageConfig: {
-                    aspectRatio: "1:1"
-                }
-            }
-        });
-
-        let base64EncodeString = "";
-        const candidates = response.candidates;
-        if (candidates && candidates.length > 0) {
-            const candidate = candidates[0];
-            if (candidate.finishReason === 'SAFETY') {
-                throw new Error('Image generation blocked by safety filters. Please try a different photo.');
-            }
-            for (const part of candidate.content?.parts || []) {
-                if (part.inlineData) {
-                    base64EncodeString = part.inlineData.data;
-                    break;
-                }
-            }
-        }
-
-        if (!base64EncodeString) {
-            throw new Error("Failed to generate animation grid. The model might have refused the prompt.");
-        }
-
-        const imageUrl = `data:image/png;base64,${base64EncodeString}`;
+        const imagePart = await imageToOptimizedGenerativePart(imageFile);
+        const imageUrl = await callGeminiImage([imagePart, { text: textPrompt }], "1:1");
 
         // Create an animated GIF by slicing the 2x2 grid
         return new Promise((resolve, reject) => {
@@ -2112,7 +2293,7 @@ export const generateVariationPrompts = async (filePart: any): Promise<string[]>
 
     try {
         const response = await ai.models.generateContent({
-            model: 'gemini-3.1-pro-preview',
+            model: 'gemini-3.8-flash',
             contents: { parts },
             config: {
                 responseMimeType: "application/json",

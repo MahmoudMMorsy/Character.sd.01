@@ -37,13 +37,35 @@ Utilizes Gemini to auto-generate 10 custom variation ideas, allowing rapid conce
 Transforms photos into detailed 16-bit dithered video game boss structures with menacing, hyper-saturated outlines and compact chibi proportions.
 
 ### 4️⃣ Retro Pixel Sprite (`/components/RetroPixelSprite.tsx`)
-Generates highly retro 8-bit or 16-bit character sprite sheets featuring 5 distinct angles (facing front, back, profile, 3/4) on solid isolated backgrounds.
+Generates authentic 5-angle retro video game sprite sheets (Front, Back, Left, Right, 3/4) on isolated white backgrounds with dedicated game style presets:
+*   **MapleStory (메이플스토리)**: Iconic 2.5-head chibi 2D MMORPG proportions, large expressive anime eyes, and clean pastel pixel line art.
+*   **Shantae and the Pirate's Curse**: WayForward 16/32-bit high-energy fluid anime pixel aesthetic, razor-sharp black contours, and vivid jewel tones.
+*   **Disney's Tarzan (1999)**: Eurocom/Digital Eclipse late-90s platformer sprites, athletic anatomy, lush jungle palette (sepia/emerald/mahogany), and dynamic keyframe stances.
+*   **Classic 8/16-Bit**: Super Mario World & Adventure Island nostalgic platformer style.
+*   **Metal Slug Arcade**: Neo Geo hyper-detailed military 2D pixel art with gritty dithering.
+*   **Castlevania: Symphony of the Night**: 32-bit gothic dark fantasy RPG sprite art.
+*   **Pokémon Gen 3 GBA**: Handheld GBA trainer/creature sprites.
 
-### 5️⃣ Layer Composer (`/components/LayerComposer.tsx`)
+### 5️⃣ Batch Processor (`/components/BatchProcessor.tsx`)
+Allows users to upload multiple character designs, an entire folder, or a single sprite sheet (with automatic visual grid slicing into individual frames) and apply 'Retro Pixel' or 'Aggressive Pixel' ("Pixel Boss") transformations to all images at once with smart pacing, individual retry controls, ZIP export, and sprite sheet stitching.
+
+### 6️⃣ Layer Composer (`/components/LayerComposer.tsx`)
 Provides multi-layer alignment tools, blending controls, opacity options, and modular canvas exports for sequential image outputs.
 
-### 6️⃣ Character Decomposer (`/components/CharacterDecomposer.tsx`)
+### 7️⃣ Character Decomposer (`/components/CharacterDecomposer.tsx`)
 Separates clothing, body, head textures, and custom accessory items in multi-slot modular grids for 2D/3D development preparation.
+
+### 8️⃣ Sprite Sheet & Animation Sequence Maker (`/components/SpriteSheetMaker.tsx`)
+Generates comprehensive multi-row animation sprite sheets and in-place animation sequences across an extensive roster of gaming universes:
+*   **MapleStory: Monsters & Bosses (وحوش وزعماء مابل)**: Mushmom (머쉬맘), Zakum (8-Armed Boss), Pink Bean (핑크빈), Crimson Balrog (크림슨 발록), Horntail Dragon (혼테일), Yeti & Pepe (예티와 페페), King Slime (킹슬라임), Orange Mushroom (주황버섯), Green Slime, Ribbon Pig, Wild Boar, Evil Eye, Lupin, and Pepe.
+*   **MapleStory: Mounts & Vehicles (مطايا ومركبات مابل)**: Red Draco (التنين الأحمر المجنح), Shinjou Pegasus (شينجو), Silver Mane (الخنزير المدرع), Frog Mount (الضفدع), Hot Air Balloon Bear (منطاد الدب), King Cro (التمساح الملكي), Yeti Mount (الييتي الضخم), Toy Tank (دبابة الألعاب), Blue Mecha Robot (الروبوت المقاتل), Ostrich (النعامة), Ram (الكبش), Turtle Mount (السلحفاة), Maple Racing Car (سيارة الفورمولا), Rocking Horse (الحصان الهزاز), Watch Hog (خنزير الحراسة), Mimiana & Mimio birds, and Magic Square (الكرة السحرية).
+*   **MapleStory: Pets & Companions (حيوانات مابل الأليفة ومساعدي الأبطال)**: Black Dragon (التنين الأسود), Jr. Balrog (البالروغ الصغير), Jr. Reaper (حصاد الأرواح الصغير), Crystal Rudolph (غزال الكريستال), Dino Boy (الديناصور), Panda (الباندا), Sun Wu Kong (الملك القرد وو كونغ), Cloud Leopard (فهد السحاب), Kino Mushroom (فطر كينو), White Tiger (النمر الأبيض), Black Kitty (القطة السوداء), Blue Husky (كلب الهاسكي), Baby Elephant (الفيل الصغير), Gorilla Robo, Green Robo, Toucan (طائر الطوقان), White Bunny (الأرنب الأبيض), White Duck (البطة البيضاء), Snowman Pet (رجل الثلج), and Snail Pet (الحلزون الصغير).
+*   **MapleStory: Morphs (تحولات ومسوخ مابل السحرية)**: Green Cornian Dragon, Barnard Grey Alien, Mystery Box, Orange Mushroom Morph, Red Snail Morph, and Ribbon Pig Morph.
+*   **MapleStory: Base Bodies & Skins (أجسام وبشرات مابل الأساسية)**: Light, Dark, Pale, Tan, White, Yellow, Green, Blue, Red, and Gray Chibi Base Bodies with full canonical MapleStory physics (bouncing idle, walk, prone, tombstone, level up cheer).
+*   **MapleStory: Heroes & Classes (أبطال وفئات مابل)**: Warrior/Hero, Magician/Bishop, Bowman/Archer, Thief/Assassin, and Pirate/Brawler with class-specific movesets (Slash, Flash Jump, Teleport, etc.).
+*   **Shantae and the Pirate's Curse**: Shantae (Half-Genie), Risky Boots, Bolo, Sky & Wrench, Rottytops, and Tinkerbats with signature attacks (Hair Whip, Pistol, Cannon Jump, Hat Glide).
+*   **Disney's Tarzan (1999 Platformer)**: Tarzan (Adult & Young), Terk, Tantor, Jane, Clayton, and Sabor Leopard with authentic late-90s platformer action keyframes.
+*   **Extensive Classic Roster**: Super Mario Run, Rayman Adventures, Metal Slug Anthology, Sonic The Hedgehog, Disney 16-bit Classics, and more.
 
 ---
 

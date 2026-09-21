@@ -16,8 +16,33 @@ const DesignVariations: React.FC<DesignVariationsProps> = ({ addToHistory }) => 
   const [generationErrors, setGenerationErrors] = useState<Record<number, string>>({});
   
   const [loading, setLoading] = useState(false);
+  const [retryingIndex, setRetryingIndex] = useState<number | null>(null);
   const [progressText, setProgressText] = useState("");
   const [error, setError] = useState<string | null>(null);
+
+  const retrySingleVariation = async (idx: number) => {
+    if (!image || !prompts[idx] || loading || retryingIndex !== null) return;
+    setRetryingIndex(idx);
+    setError(null);
+    setGenerationErrors(prev => {
+      const next = { ...prev };
+      delete next[idx];
+      return next;
+    });
+
+    try {
+      const filePart = await fileToGenerativePart(image.file);
+      const generatedImage = await generateVariationImage(filePart, prompts[idx]);
+      setResults(prev => ({ ...prev, [idx]: generatedImage }));
+    } catch (err: any) {
+      console.error(`Retry failed for variation ${idx + 1}:`, err);
+      const errMsg = err?.message || "Retry failed";
+      setGenerationErrors(prev => ({ ...prev, [idx]: errMsg }));
+      setResults(prev => ({ ...prev, [idx]: "ERROR" }));
+    } finally {
+      setRetryingIndex(null);
+    }
+  };
 
   const handleGenerate = async () => {
     if (!image) return;
@@ -53,16 +78,23 @@ const DesignVariations: React.FC<DesignVariationsProps> = ({ addToHistory }) => 
           setResults({ ...newResults }); // Force re-render with partial results
         } catch (imgError: any) {
           console.error(`Failed to generate variation ${i + 1}`, imgError);
-          // Don't throw, just put a placeholder or leave it empty so rest can continue
           newResults[i] = "ERROR";
           setResults({ ...newResults });
-          setGenerationErrors(prev => ({ ...prev, [i]: imgError?.message || "Generation failed" }));
+          const errMsg = imgError?.message || "Generation failed";
+          setGenerationErrors(prev => ({ ...prev, [i]: errMsg }));
+
+          // Only break completely on hard permission/zero-quota blocks where nothing can succeed
+          const isHardBlock = errMsg.includes("403") || errMsg.includes("PERMISSION_DENIED") || errMsg.includes("limit is 0");
+          if (isHardBlock) {
+            setError(errMsg);
+            break;
+          }
         }
         
-        // Add 6.5 second delay between requests to prevent API maximum requests-per-minute quota issues
+        // Pacing delay between variations to stay comfortably within requests-per-minute (RPM) quotas
         if (i < conceptualPrompts.length - 1) {
-            setProgressText(`Waiting to prevent rate limits...`);
-            await new Promise(r => setTimeout(r, 6500));
+            setProgressText(`Pacing requests to respect rate limits (${i + 1}/${conceptualPrompts.length})...`);
+            await new Promise(r => setTimeout(r, 8500));
         }
       }
       
@@ -193,10 +225,30 @@ const DesignVariations: React.FC<DesignVariationsProps> = ({ addToHistory }) => 
                 <div className="w-full md:w-1/3 shrink-0">
                   <div className="aspect-square bg-gray-100 rounded-lg overflow-hidden border border-gray-200 relative">
                     {results[idx] === "ERROR" ? (
-                        <div className="absolute inset-0 flex flex-col items-center justify-center text-red-500 p-4 text-center">
-                            <span className="text-2xl mb-2">⚠️</span>
-                            <span className="text-xs font-medium">Failed to generate</span>
-                            {generationErrors[idx] && <span className="text-[10px] mt-1 opacity-80 text-red-400 break-words line-clamp-3">{generationErrors[idx]}</span>}
+                        <div className="absolute inset-0 flex flex-col items-center justify-center text-red-500 p-3 text-center bg-red-50/50">
+                            {retryingIndex === idx ? (
+                              <>
+                                <div className="w-6 h-6 border-2 border-indigo-400 border-t-indigo-600 rounded-full animate-spin mb-2" />
+                                <span className="text-xs font-medium text-indigo-600">Retrying...</span>
+                              </>
+                            ) : (
+                              <>
+                                <span className="text-xl mb-1">⚠️</span>
+                                <span className="text-xs font-semibold text-red-600">فشل التوليد المؤقت</span>
+                                {generationErrors[idx] && (
+                                  <span className="text-[10px] mt-1 text-gray-500 break-words line-clamp-2">
+                                    {generationErrors[idx].includes("Rpc failed") ? "انقطاع شبكة مؤقت (XHR RPC)" : generationErrors[idx]}
+                                  </span>
+                                )}
+                                <button
+                                  onClick={() => retrySingleVariation(idx)}
+                                  disabled={loading || retryingIndex !== null}
+                                  className="mt-2 px-3 py-1 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-medium rounded shadow-sm transition-colors"
+                                >
+                                  إعادة المحاولة / Retry
+                                </button>
+                              </>
+                            )}
                         </div>
                     ) : results[idx] ? (
                       <img src={results[idx]} alt={`Variation ${idx + 1}`} className="w-full h-full object-contain bg-white" />
@@ -217,8 +269,17 @@ const DesignVariations: React.FC<DesignVariationsProps> = ({ addToHistory }) => 
                   )}
                 </div>
                 <div className="w-full md:w-2/3">
-                  <div className="inline-flex items-center justify-center px-2.5 py-1 rounded-full bg-indigo-100 text-indigo-800 text-xs font-bold mb-3">
-                    Variation {idx + 1}
+                  <div className="flex items-center justify-between mb-3">
+                    <span className="inline-flex items-center justify-center px-2.5 py-1 rounded-full bg-indigo-100 text-indigo-800 text-xs font-bold">
+                      Variation {idx + 1}
+                    </span>
+                    <button
+                      onClick={() => navigator.clipboard.writeText(prompt)}
+                      className="text-xs text-indigo-600 hover:text-indigo-800 font-medium px-2 py-1 rounded bg-indigo-50 hover:bg-indigo-100 transition-colors"
+                      title="نسخ الفكرة / Copy prompt"
+                    >
+                      نسخ الفكرة / Copy
+                    </button>
                   </div>
                   <p className="text-gray-700 text-sm leading-relaxed italic border-l-4 border-indigo-200 pl-4 py-1">
                     "{prompt}"
