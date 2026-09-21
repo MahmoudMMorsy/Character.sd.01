@@ -1,1 +1,67 @@
 @import "tailwindcss";
+
+@layer utilities {
+  /* Hide scrollbar for Chrome, Safari and Opera */
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  /* Hide scrollbar for IE, Edge and Firefox */
+  .no-scrollbar {
+    -ms-overflow-style: none;  /* IE and Edge */
+    scrollbar-width: none;  /* Firefox */
+  }
+}
+
+/* Custom Android Studio Modern Theme Extensions */
+:root {
+  --android-bg: #090d16;
+  --android-surface: #131b2e;
+  --android-card: #182238;
+  --android-border: rgba(255, 255, 255, 0.08);
+  --android-accent-primary: #8b5cf6;
+  --android-accent-secondary: #ec4899;
+  --android-accent-cyan: #06b6d4;
+}
+
+body {
+  background-color: var(--android-bg);
+  color: #f1f5f9;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  overscroll-behavior-y: none;
+}
+
+/* Glassmorphism & Android Card Styling */
+.android-card {
+  background: rgba(24, 34, 56, 0.75);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 1.25rem;
+  box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5);
+}
+
+.android-glow {
+  box-shadow: 0 0 25px -5px rgba(139, 92, 246, 0.3);
+}
+
+/* Touch active ripple effect emulation */
+.android-touch {
+  transition: transform 0.15s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.15s ease;
+}
+
+.android-touch:active {
+  transform: scale(0.96);
+  opacity: 0.9;
+}
+
+/* Animations */
+@keyframes pulseGlow {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 0.8; }
+}
+
+.animate-pulse-glow {
+  animation: pulseGlow 3s infinite ease-in-out;
+}
