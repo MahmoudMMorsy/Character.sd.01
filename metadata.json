@@ -1,0 +1,8 @@
+{
+  "name": "character creator _offine.0.sd.08",
+  "description": "An AI-powered character and fashion studio. Create and animate characters in Super Mario Run and Rayman Adventures styles, perform face swaps, virtual try-ons, and advanced image editing for fashion and gaming.",
+  "requestFramePermissions": [
+    "clipboard-read"
+  ],
+  "majorCapabilities": []
+}

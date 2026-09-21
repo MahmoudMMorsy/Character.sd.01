@@ -1,0 +1,48 @@
+{
+  "entities": {
+    "HistoryItem": {
+      "title": "HistoryItem",
+      "description": "Represents an item in the user's generation history.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "userId": {
+          "type": "string"
+        },
+        "timestamp": {
+          "type": "number"
+        },
+        "resultImage": {
+          "type": "string"
+        },
+        "resultImages": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "resultVideo": {
+          "type": "string"
+        },
+        "tabId": {
+          "type": "string"
+        },
+        "tabLabel": {
+          "type": "string"
+        },
+        "inputs": {
+          "type": "object"
+        }
+      },
+      "required": ["id", "userId", "timestamp", "tabId", "tabLabel"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}/history/{historyId}": {
+      "schema": {
+        "$ref": "#/entities/HistoryItem"
+      },
+      "description": "Stores generation history per user."
+    }
+  }
+}
