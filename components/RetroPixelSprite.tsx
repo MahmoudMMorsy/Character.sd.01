@@ -183,9 +183,9 @@ const RetroPixelSprite: React.FC<RetroPixelSpriteProps> = ({ addToHistory }) => 
             </div>
 
             <div className="p-3 bg-white rounded-xl border border-gray-300 shadow-inner flex items-center justify-center overflow-x-auto">
-              <img 
-                src={resultImage} 
-                alt="Generated Retro Pixel Sprite Sheet" 
+              <img
+                src={resultImage}
+                alt="Generated Retro Pixel Sprite Sheet"
                 className="max-h-80 w-auto object-contain"
               />
             </div>

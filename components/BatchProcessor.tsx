@@ -1,18 +1,18 @@
 import React, { useState, useRef, useCallback } from 'react';
-import { 
-  FolderUp, 
-  Layers, 
-  Grid, 
-  Play, 
-  Square, 
-  Download, 
-  Trash2, 
-  RefreshCw, 
-  CheckCircle2, 
-  AlertCircle, 
-  Clock, 
-  Sparkles, 
-  Sliders, 
+import {
+  FolderUp,
+  Layers,
+  Grid,
+  Play,
+  Square,
+  Download,
+  Trash2,
+  RefreshCw,
+  CheckCircle2,
+  AlertCircle,
+  Clock,
+  Sparkles,
+  Sliders,
   Image as ImageIcon,
   FileArchive,
   ArrowRight,
@@ -459,7 +459,7 @@ const BatchProcessor: React.FC<BatchProcessorProps> = ({ addToHistory }) => {
           </div>
 
           {!sheetImage ? (
-            <div 
+            <div
               onClick={() => sheetInputRef.current?.click()}
               className="border-2 border-dashed border-gray-700 hover:border-indigo-500 bg-gray-900/50 hover:bg-gray-900/80 rounded-xl p-8 text-center cursor-pointer transition-all flex flex-col items-center justify-center gap-3"
             >
@@ -470,12 +470,12 @@ const BatchProcessor: React.FC<BatchProcessorProps> = ({ addToHistory }) => {
                 <p className="text-sm font-semibold text-white">Click or drag & drop a Character Sprite Sheet</p>
                 <p className="text-xs text-gray-400 mt-1">PNG, JPG, or WEBP (e.g. 2x2, 1x4, 2x4 character grid)</p>
               </div>
-              <input 
+              <input
                 ref={sheetInputRef}
-                type="file" 
-                accept="image/*" 
-                className="hidden" 
-                onChange={handleSheetUpload} 
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={handleSheetUpload}
               />
             </div>
           ) : (
@@ -532,13 +532,13 @@ const BatchProcessor: React.FC<BatchProcessorProps> = ({ addToHistory }) => {
               {/* Visual Slice Preview with Overlay Grid */}
               <div className="relative max-h-72 bg-gray-950 rounded-xl overflow-hidden border border-gray-800 flex items-center justify-center p-2">
                 <div className="relative inline-block max-h-64">
-                  <img 
-                    src={sheetImage.previewUrl} 
-                    alt="Sheet Grid Preview" 
+                  <img
+                    src={sheetImage.previewUrl}
+                    alt="Sheet Grid Preview"
                     className="max-h-64 object-contain rounded"
                   />
                   {/* Grid Lines Overlay */}
-                  <div 
+                  <div
                     className="absolute inset-0 pointer-events-none grid"
                     style={{
                       gridTemplateRows: `repeat(${sheetRows}, 1fr)`,
@@ -546,8 +546,8 @@ const BatchProcessor: React.FC<BatchProcessorProps> = ({ addToHistory }) => {
                     }}
                   >
                     {Array.from({ length: sheetRows * sheetCols }).map((_, i) => (
-                      <div 
-                        key={i} 
+                      <div
+                        key={i}
                         className="border border-indigo-500/50 bg-indigo-500/10 flex items-center justify-center"
                       >
                         <span className="text-[10px] font-mono font-bold text-indigo-300 bg-black/60 px-1 rounded">
@@ -594,7 +594,7 @@ const BatchProcessor: React.FC<BatchProcessorProps> = ({ addToHistory }) => {
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {/* Multi File Selector */}
-            <div 
+            <div
               onClick={() => multiFileInputRef.current?.click()}
               className="border-2 border-dashed border-gray-700 hover:border-indigo-500 bg-gray-900/50 hover:bg-gray-900/80 rounded-xl p-6 text-center cursor-pointer transition-all flex flex-col items-center justify-center gap-2"
             >
@@ -603,18 +603,18 @@ const BatchProcessor: React.FC<BatchProcessorProps> = ({ addToHistory }) => {
               </div>
               <p className="text-xs font-bold text-white">Select Multiple Files</p>
               <p className="text-[11px] text-gray-400">Pick several character photos at once</p>
-              <input 
+              <input
                 ref={multiFileInputRef}
-                type="file" 
-                multiple 
-                accept="image/*" 
-                className="hidden" 
-                onChange={e => handleMultipleFiles(e.target.files)} 
+                type="file"
+                multiple
+                accept="image/*"
+                className="hidden"
+                onChange={e => handleMultipleFiles(e.target.files)}
               />
             </div>
 
             {/* Folder / Directory Selector */}
-            <div 
+            <div
               onClick={() => folderInputRef.current?.click()}
               className="border-2 border-dashed border-gray-700 hover:border-purple-500 bg-gray-900/50 hover:bg-gray-900/80 rounded-xl p-6 text-center cursor-pointer transition-all flex flex-col items-center justify-center gap-2"
             >
@@ -623,15 +623,15 @@ const BatchProcessor: React.FC<BatchProcessorProps> = ({ addToHistory }) => {
               </div>
               <p className="text-xs font-bold text-white">Upload Folder of Designs</p>
               <p className="text-[11px] text-gray-400">Processes all images found in the directory</p>
-              <input 
+              <input
                 ref={folderInputRef}
-                type="file" 
+                type="file"
                 multiple
                 // @ts-ignore
-                webkitdirectory="" 
-                directory="" 
-                className="hidden" 
-                onChange={e => handleMultipleFiles(e.target.files)} 
+                webkitdirectory=""
+                directory=""
+                className="hidden"
+                onChange={e => handleMultipleFiles(e.target.files)}
               />
             </div>
           </div>
@@ -652,7 +652,7 @@ const BatchProcessor: React.FC<BatchProcessorProps> = ({ addToHistory }) => {
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {/* Style 1: Retro Pixel */}
-          <div 
+          <div
             onClick={() => setTransformType('retro_pixel')}
             className={`p-4 rounded-xl border cursor-pointer transition-all ${
               transformType === 'retro_pixel'
@@ -664,10 +664,10 @@ const BatchProcessor: React.FC<BatchProcessorProps> = ({ addToHistory }) => {
               <span className="text-sm font-bold text-white flex items-center gap-2">
                 🕹️ Retro Pixel Sprite
               </span>
-              <input 
-                type="radio" 
-                checked={transformType === 'retro_pixel'} 
-                onChange={() => setTransformType('retro_pixel')} 
+              <input
+                type="radio"
+                checked={transformType === 'retro_pixel'}
+                onChange={() => setTransformType('retro_pixel')}
                 className="accent-indigo-500"
               />
             </div>
@@ -703,7 +703,7 @@ const BatchProcessor: React.FC<BatchProcessorProps> = ({ addToHistory }) => {
           </div>
 
           {/* Style 2: Aggressive Pixel Boss */}
-          <div 
+          <div
             onClick={() => setTransformType('aggressive_pixel')}
             className={`p-4 rounded-xl border cursor-pointer transition-all ${
               transformType === 'aggressive_pixel'
@@ -715,10 +715,10 @@ const BatchProcessor: React.FC<BatchProcessorProps> = ({ addToHistory }) => {
               <span className="text-sm font-bold text-white flex items-center gap-2">
                 👾 Aggressive Pixel ("Pixel Boss")
               </span>
-              <input 
-                type="radio" 
-                checked={transformType === 'aggressive_pixel'} 
-                onChange={() => setTransformType('aggressive_pixel')} 
+              <input
+                type="radio"
+                checked={transformType === 'aggressive_pixel'}
+                onChange={() => setTransformType('aggressive_pixel')}
                 className="accent-purple-500"
               />
             </div>
@@ -844,7 +844,7 @@ const BatchProcessor: React.FC<BatchProcessorProps> = ({ addToHistory }) => {
               <span className="font-mono text-indigo-400">{progressPercent}%</span>
             </div>
             <div className="w-full h-2 bg-gray-800 rounded-full overflow-hidden">
-              <div 
+              <div
                 className="h-full bg-gradient-to-r from-indigo-500 to-purple-500 transition-all duration-300 rounded-full"
                 style={{ width: `${progressPercent}%` }}
               />
@@ -870,15 +870,15 @@ const BatchProcessor: React.FC<BatchProcessorProps> = ({ addToHistory }) => {
 
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
             {queue.map((item, idx) => (
-              <div 
-                key={item.id} 
+              <div
+                key={item.id}
                 className={`bg-gray-900/70 border rounded-xl p-3 flex flex-col justify-between transition-all ${
-                  currentIndex === idx 
-                    ? 'border-indigo-500 ring-2 ring-indigo-500/40 bg-indigo-950/20' 
-                    : item.status === 'success' 
-                    ? 'border-emerald-500/50 bg-emerald-950/10' 
-                    : item.status === 'failed' 
-                    ? 'border-red-500/50 bg-red-950/10' 
+                  currentIndex === idx
+                    ? 'border-indigo-500 ring-2 ring-indigo-500/40 bg-indigo-950/20'
+                    : item.status === 'success'
+                    ? 'border-emerald-500/50 bg-emerald-950/10'
+                    : item.status === 'failed'
+                    ? 'border-red-500/50 bg-red-950/10'
                     : 'border-gray-800'
                 }`}
               >
@@ -887,7 +887,7 @@ const BatchProcessor: React.FC<BatchProcessorProps> = ({ addToHistory }) => {
                   <span className="text-[10px] font-mono text-gray-400 truncate max-w-[120px]" title={item.name}>
                     #{idx + 1} {item.name}
                   </span>
-                  
+
                   {item.status === 'success' && (
                     <span className="flex items-center gap-1 text-[10px] text-emerald-400 font-semibold bg-emerald-500/10 px-1.5 py-0.5 rounded">
                       <CheckCircle2 className="w-3 h-3" /> Done
@@ -913,16 +913,16 @@ const BatchProcessor: React.FC<BatchProcessorProps> = ({ addToHistory }) => {
                 {/* Thumbnail Display: Before & After if completed */}
                 <div className="aspect-square bg-black/40 rounded-lg overflow-hidden relative border border-gray-800 group">
                   {item.resultUrl ? (
-                    <img 
-                      src={item.resultUrl} 
-                      alt={`Processed ${item.name}`} 
-                      className="w-full h-full object-contain bg-white" 
+                    <img
+                      src={item.resultUrl}
+                      alt={`Processed ${item.name}`}
+                      className="w-full h-full object-contain bg-white"
                     />
                   ) : (
-                    <img 
-                      src={item.sourceImage.previewUrl} 
-                      alt={`Source ${item.name}`} 
-                      className="w-full h-full object-contain opacity-70" 
+                    <img
+                      src={item.sourceImage.previewUrl}
+                      alt={`Source ${item.name}`}
+                      className="w-full h-full object-contain opacity-70"
                     />
                   )}
 
@@ -993,11 +993,11 @@ const BatchProcessor: React.FC<BatchProcessorProps> = ({ addToHistory }) => {
 
       {/* Comparison Modal (Before vs After) */}
       {previewItem && (
-        <div 
+        <div
           className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4"
           onClick={() => setPreviewItem(null)}
         >
-          <div 
+          <div
             className="bg-[#1e293b] border border-gray-700 max-w-2xl w-full p-6 rounded-2xl shadow-2xl space-y-4"
             onClick={e => e.stopPropagation()}
           >

@@ -21,7 +21,7 @@ export interface VideoFile {
 
 export type FeatureTab = string;
 
-export type RetroGameStyle = 
+export type RetroGameStyle =
   | 'maple_story'
   | 'shantae_pirate_curse'
   | 'tarzan_1999'

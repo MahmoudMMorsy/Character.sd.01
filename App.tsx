@@ -33,10 +33,10 @@ import AdultToChild from './components/AdultToChild';
 import MannequinHeadConverter from './components/MannequinHeadConverter';
 import AggressivePixelSprite from './components/AggressivePixelSprite';
 import RetroPixelSprite from './components/RetroPixelSprite';
-import BatchProcessor from './components/BatchProcessor';
 import GridSplitter from './components/GridSplitter';
 import LayerComposer from './components/LayerComposer';
 import RetroCelAnimation from './components/RetroCelAnimation';
+import BatchProcessor from './components/BatchProcessor';
 import { setUseLocalEngine } from './services/geminiService';
 import { 
   auth, 
@@ -44,7 +44,7 @@ import {
   loadHistoryFromFirestore, 
   deleteHistoryItemFromFirestore 
 } from './services/firebase';
-import { Tv as TvIcon, Layers as LayersIcon } from 'lucide-react';
+import { Tv as TvIcon, Home, Grid, History as HistoryIcon, Sparkles, X, Layers } from 'lucide-react';
 
 import type { FeatureTab, HistoryItem } from './types';
 import { MagicWandIcon } from './components/icons/MagicWandIcon';
@@ -68,42 +68,42 @@ import { SpriteIcon } from './components/icons/SpriteIcon';
 import { AnimationIcon } from './components/icons/AnimationIcon';
 import { FaceSmileIcon } from './components/icons/FaceSmileIcon';
 
-const TABS = [
-  { id: 'retro-cel', label: 'Retro Cel', icon: TvIcon, component: <RetroCelAnimation /> },
-  { id: '10-variations', label: '10 Ideas', icon: MagicWandIcon, component: <DesignVariations /> },
-  { id: 'batch-processor', label: 'Batch Pixel', icon: LayersIcon, component: <BatchProcessor /> },
-  { id: 'aggressive-pixel-sprite', label: 'Pixel Boss', icon: SpriteIcon, component: <AggressivePixelSprite /> },
-  { id: 'retro-pixel-sprite', label: 'Retro Pixel', icon: SpriteIcon, component: <RetroPixelSprite /> },
-  { id: 'grid-splitter', label: 'Grid Split', icon: LayersSplitIcon, component: <GridSplitter /> },
-  { id: 'layer-composer', label: 'Composer', icon: LayersSplitIcon, component: <LayerComposer /> },
-  { id: 'make-realistic', label: 'Realistic', icon: CameraIcon, component: <MakeRealistic /> },
-  { id: 'adult-to-child', label: 'Adult -> Child', icon: UserIcon, component: <AdultToChild /> },
-  { id: 'mannequin-head', label: 'Mannequin', icon: UserIcon, component: <MannequinHeadConverter /> },
-  { id: 'char-kit', label: 'Asset Kit', icon: LayersSplitIcon, component: <CharacterKitGenerator /> },
-  { id: 'in-place-video', label: 'In-Place Video', icon: AnimationIcon, component: <InPlaceVideoMaker /> },
-  { id: 'sprite-to-gif', label: 'Sprite to GIF', icon: GifIcon, component: <SpriteToGifConverter addToHistory={() => {}} /> },
-  { id: 'in-place-anim', label: 'In-Place Anim', icon: AnimationIcon, component: <InPlaceAnimationMaker /> },
-  { id: 'expressions', label: '36 Faces', icon: FaceSmileIcon, component: <ExpressionSheetMaker /> },
-  { id: 'street-fashion', label: 'Street OOTD', icon: CameraIcon, component: <StreetFashion /> },
-  { id: 'ghost', label: 'Ghost Product', icon: HangerIcon, component: <GhostMannequin /> },
-  { id: 'decompose', label: '3D Split', icon: LayersSplitIcon, component: <CharacterDecomposer /> },
-  { id: 'sprite-sheet', label: 'Sprite Sheet', icon: SpriteIcon, component: <SpriteSheetMaker /> },
-  { id: 'restore', label: 'Old Photo', icon: RestoreIcon, component: <PhotoRestoration /> },
-  { id: 'gif-builder', label: 'GIF Maker', icon: GifIcon, component: <GifBuilder /> },
-  { id: 'text-to-image', label: 'Art Gen', icon: ImageIcon, component: <TextToImage /> },
-  { id: 'remix', label: 'Remix', icon: MagicWandIcon, component: <Remix /> },
-  { id: 'remove-bg', label: 'Remove BG', icon: EraserIcon, component: <RemoveBackground /> },
-  { id: 'face-swap', label: 'Face Swap', icon: SwapIcon, component: <FaceSwap /> },
-  { id: 'color-changer', label: 'Recolor', icon: PaletteIcon, component: <ColorChanger /> },
-  { id: 'try-on', label: 'Try-On', icon: ShirtIcon, component: <VirtualTryOn /> },
-  { id: 'clothes-only', label: 'Isolate', icon: ShirtIcon, component: <ClothesOnly /> },
-  { id: 'banana-animate', label: 'Animate', icon: SparklesIcon, component: <BananaAnimated /> },
-  { id: 'layering', label: 'Layers', icon: LayeringIcon, component: <Layering /> },
-  { id: 'outfit-builder', label: 'Builder', icon: OutfitBuilderIcon, component: <OutfitBuilder /> },
-  { id: 'ethnicity-changer', label: 'Ethnicity', icon: UserIcon, component: <EthnicityChanger /> },
-  { id: 'realistic-anatomy', label: 'Anatomy', icon: UserIcon, component: <RealisticAnatomy /> },
-  { id: 't-pose', label: 'T-Pose', icon: TPoseIcon, component: <TPoseConverter /> },
-  { id: '3d-model', label: '3D Map', icon: Model3DIcon, component: <Model3DConverter /> },
+const TABS: TabItem[] = [
+  { id: 'retro-cel', label: 'Retro Cel', category: 'animation', icon: TvIcon, component: <RetroCelAnimation /> },
+  { id: '10-variations', label: '10 Ideas', category: 'ai', icon: MagicWandIcon, component: <DesignVariations /> },
+  { id: 'aggressive-pixel-sprite', label: 'Pixel Boss', category: 'pixel', icon: SpriteIcon, component: <AggressivePixelSprite /> },
+  { id: 'retro-pixel-sprite', label: 'Retro Pixel', category: 'pixel', icon: SpriteIcon, component: <RetroPixelSprite /> },
+  { id: 'grid-splitter', label: 'Grid Split', category: 'editing', icon: LayersSplitIcon, component: <GridSplitter /> },
+  { id: 'layer-composer', label: 'Composer', category: '3d', icon: LayersSplitIcon, component: <LayerComposer /> },
+  { id: 'batch-processor', label: 'Batch Process', category: 'editing', icon: Layers, component: <BatchProcessor /> },
+  { id: 'make-realistic', label: 'Realistic', category: 'editing', icon: CameraIcon, component: <MakeRealistic /> },
+  { id: 'adult-to-child', label: 'Adult -> Child', category: 'editing', icon: UserIcon, component: <AdultToChild /> },
+  { id: 'mannequin-head', label: 'Mannequin', category: '3d', icon: UserIcon, component: <MannequinHeadConverter /> },
+  { id: 'char-kit', label: 'Asset Kit', category: '3d', icon: LayersSplitIcon, component: <CharacterKitGenerator /> },
+  { id: 'in-place-video', label: 'In-Place Video', category: 'animation', icon: AnimationIcon, component: <InPlaceVideoMaker /> },
+  { id: 'sprite-to-gif', label: 'Sprite to GIF', category: 'animation', icon: GifIcon, component: <SpriteToGifConverter addToHistory={() => {}} /> },
+  { id: 'in-place-anim', label: 'In-Place Anim', category: 'animation', icon: AnimationIcon, component: <InPlaceAnimationMaker /> },
+  { id: 'expressions', label: '36 Faces', category: 'editing', icon: FaceSmileIcon, component: <ExpressionSheetMaker /> },
+  { id: 'street-fashion', label: 'Street OOTD', category: 'ai', icon: CameraIcon, component: <StreetFashion /> },
+  { id: 'ghost', label: 'Ghost Product', category: 'editing', icon: HangerIcon, component: <GhostMannequin /> },
+  { id: 'decompose', label: '3D Split', category: '3d', icon: LayersSplitIcon, component: <CharacterDecomposer /> },
+  { id: 'sprite-sheet', label: 'Sprite Sheet', category: 'pixel', icon: SpriteIcon, component: <SpriteSheetMaker addToHistory={() => {}} /> },
+  { id: 'restore', label: 'Old Photo', category: 'editing', icon: RestoreIcon, component: <PhotoRestoration /> },
+  { id: 'gif-builder', label: 'GIF Maker', category: 'animation', icon: GifIcon, component: <GifBuilder /> },
+  { id: 'text-to-image', label: 'Art Gen', category: 'ai', icon: ImageIcon, component: <TextToImage /> },
+  { id: 'remix', label: 'Remix', category: 'ai', icon: MagicWandIcon, component: <Remix /> },
+  { id: 'remove-bg', label: 'Remove BG', category: 'editing', icon: EraserIcon, component: <RemoveBackground /> },
+  { id: 'face-swap', label: 'Face Swap', category: 'editing', icon: SwapIcon, component: <FaceSwap /> },
+  { id: 'color-changer', label: 'Recolor', category: 'editing', icon: PaletteIcon, component: <ColorChanger /> },
+  { id: 'try-on', label: 'Try-On', category: 'ai', icon: ShirtIcon, component: <VirtualTryOn /> },
+  { id: 'clothes-only', label: 'Isolate', category: 'editing', icon: ShirtIcon, component: <ClothesOnly /> },
+  { id: 'banana-animate', label: 'Animate', category: 'animation', icon: SparklesIcon, component: <BananaAnimated /> },
+  { id: 'layering', label: 'Layers', category: '3d', icon: LayeringIcon, component: <Layering /> },
+  { id: 'outfit-builder', label: 'Builder', category: 'editing', icon: OutfitBuilderIcon, component: <OutfitBuilder /> },
+  { id: 'ethnicity-changer', label: 'Ethnicity', category: 'editing', icon: UserIcon, component: <EthnicityChanger /> },
+  { id: 'realistic-anatomy', label: 'Anatomy', category: 'editing', icon: UserIcon, component: <RealisticAnatomy /> },
+  { id: 't-pose', label: 'T-Pose', category: '3d', icon: TPoseIcon, component: <TPoseConverter /> },
+  { id: '3d-model', label: '3D Map', category: '3d', icon: Model3DIcon, component: <Model3DConverter /> },
 ];
 
 const LOCAL_STORAGE_HISTORY_KEY = 'ai_remix_history';
@@ -306,7 +306,7 @@ const App: React.FC = () => {
           }`}
         >
           <Grid className="w-5 h-5" />
-          <span className="text-[10px]">الأدوات (34+)</span>
+          <span className="text-[10px]">الأدوات (35+)</span>
         </button>
 
         <button
