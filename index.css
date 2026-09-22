@@ -12,15 +12,41 @@
   }
 }
 
-/* Custom Android Studio Modern Theme Extensions */
-:root {
+/* Theme Variables */
+:root[data-theme="violet"] {
   --android-bg: #090d16;
   --android-surface: #131b2e;
   --android-card: #182238;
   --android-border: rgba(255, 255, 255, 0.08);
   --android-accent-primary: #8b5cf6;
   --android-accent-secondary: #ec4899;
-  --android-accent-cyan: #06b6d4;
+}
+
+:root[data-theme="emerald"] {
+  --android-bg: #061412;
+  --android-surface: #0e2723;
+  --android-card: #13332e;
+  --android-border: rgba(52, 211, 153, 0.15);
+  --android-accent-primary: #10b981;
+  --android-accent-secondary: #06b6d4;
+}
+
+:root[data-theme="cyberpunk"] {
+  --android-bg: #0f0b1e;
+  --android-surface: #1b1333;
+  --android-card: #251947;
+  --android-border: rgba(236, 72, 153, 0.2);
+  --android-accent-primary: #ec4899;
+  --android-accent-secondary: #eab308;
+}
+
+:root[data-theme="velvet"] {
+  --android-bg: #140910;
+  --android-surface: #24101e;
+  --android-card: #301628;
+  --android-border: rgba(244, 63, 94, 0.15);
+  --android-accent-primary: #f43f5e;
+  --android-accent-secondary: #a855f7;
 }
 
 body {
@@ -30,16 +56,17 @@ body {
   user-select: none;
   -webkit-tap-highlight-color: transparent;
   overscroll-behavior-y: none;
+  transition: background-color 0.3s ease;
 }
 
 /* Glassmorphism & Android Card Styling */
 .android-card {
-  background: rgba(24, 34, 56, 0.75);
+  background: var(--android-card);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 1.25rem;
-  box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5);
+  border: 1px solid var(--android-border);
+  border-radius: 1.5rem;
+  box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.6);
 }
 
 .android-glow {

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import Header from './components/Header';
+import Header, { AppTheme } from './components/Header';
 import Tabs, { TabItem } from './components/Tabs';
 import VirtualTryOn from './components/VirtualTryOn';
 import ClothesOnly from './components/ClothesOnly';
@@ -114,6 +114,7 @@ const App: React.FC = () => {
   const [activeCategory, setActiveCategory] = useState('all');
   const [activeBottomNav, setActiveBottomNav] = useState<'home' | 'tools' | 'history'>('home');
   const [isToolsGridOpen, setIsToolsGridOpen] = useState(false);
+  const [theme, setTheme] = useState<AppTheme>('violet');
 
   const [history, setHistory] = useState<HistoryItem[]>(() => {
     try {
@@ -127,6 +128,11 @@ const App: React.FC = () => {
   const [forceLocalMode, setForceLocalMode] = useState(false);
   const [showBanner, setShowBanner] = useState(true);
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
+
+  // Theme Sync
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', theme);
+  }, [theme]);
 
   // Sync with local storage
   useEffect(() => {
@@ -222,7 +228,7 @@ const App: React.FC = () => {
   const effectiveLocalMode = isOffline || forceLocalMode;
 
   return (
-    <div className="bg-[#090d16] text-slate-100 min-h-screen font-sans flex flex-col selection:bg-violet-500 selection:text-white pb-24">
+    <div className="min-h-screen font-sans flex flex-col selection:bg-violet-500 selection:text-white pb-24">
       
       {/* Offline / Local Mode Banner */}
       {effectiveLocalMode && showBanner && (
@@ -236,7 +242,12 @@ const App: React.FC = () => {
       )}
       
       {/* Header Bar */}
-      <Header isLocalMode={forceLocalMode} onToggleMode={toggleLocalMode} />
+      <Header
+        isLocalMode={forceLocalMode}
+        onToggleMode={toggleLocalMode}
+        currentTheme={theme}
+        onChangeTheme={setTheme}
+      />
       
       {/* Navigation & Search Selector Bar */}
       <div className="sticky top-[61px] z-40 bg-[#090d16]/90 backdrop-blur-xl border-b border-white/5 shadow-2xl">
@@ -333,7 +344,7 @@ const App: React.FC = () => {
         <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex flex-col justify-end animate-fade-in">
           <div className="bg-[#131b2e] border-t border-white/10 rounded-t-3xl max-h-[85vh] flex flex-col p-4 shadow-2xl">
             <div className="flex justify-between items-center pb-3 border-b border-white/10">
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 dir-rtl">
                 <Sparkles className="w-5 h-5 text-violet-400" />
                 <h3 className="text-base font-bold text-white">جميع أدوات التصميم ({TABS.length})</h3>
               </div>
